@@ -30,6 +30,18 @@ class OtherCog(commands.Cog):
             return
             
         await ctx.send(file=file)
+    
+    @commands.command()
+    async def lyric(self, ctx):
+        random_num_lyric = random.randint(1, 7)
+        file_path = f"data/{random_num_lyric}.txt"
+
+        if os.path.exists(file_path):
+            with open(file_path, 'r') as file:
+                content = file.read()
+            await ctx.send(content)
+        else:
+            await ctx.send("Couldn't find the lyric file")
 
     @commands.command()
     async def opl(self, ctx):
@@ -50,20 +62,4 @@ class OtherCog(commands.Cog):
     @commands.command()
     async def hi(self, ctx):
         await ctx.send("Hi I'm coffee!")
-    
-    @commands.command() # please work git
-    async def lyric(self, ctx):
-        random_num_lyric = random.randint(1, 7)
-        file_path = f"data/{random_num_lyric}.txt" # comment 
-
-        if os.path.exists(file_path):
-            with open(file_path, 'r') as file:
-                content = file.read()
-            await ctx.send(content)
-        else:
-            await ctx.send("Couldn't find the lyric file")
-
-    @commands.command()
-    async def github(self, ctx):
-        await ctx.send("https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request")
     
