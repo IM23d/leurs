@@ -25,9 +25,6 @@ token.txt
 config.json
 .env
 
-# Data files (might contain sensitive info)
-data/
-
 # IDE files
 .idea/
 .vscode/
