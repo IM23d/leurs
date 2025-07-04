@@ -32,6 +32,10 @@ class AdminCog(commands.Cog):
         # Nickname history file path
         self.nickname_file = self.data_dir / "nickname_history.json"
         
+        # Blocked terms file paths
+        self.blocked_terms_file = self.data_dir / "blocked_terms.json"
+        self.punishments_file = self.data_dir / "punishments.json"
+        
         # Initialize role saving task
         self.role_save_task = None
         self.last_save_time = None
@@ -42,6 +46,9 @@ class AdminCog(commands.Cog):
         
         # Initialize nickname history
         self.load_nickname_history()
+        
+        # Initialize blocked terms
+        self.ensure_files_exist()
 
     def cog_unload(self):
         # Cancel the role save task when the cog is unloaded
@@ -134,6 +141,488 @@ class AdminCog(commands.Cog):
         except Exception as e:
             print(f"Error getting previous nickname: {e}")
             return None
+
+    # ============ BLOCKED TERMS FUNCTIONALITY ============
+    
+    def ensure_files_exist(self):
+        """Ensure blocked terms and punishments files exist"""
+        try:
+            # Create blocked terms file if it doesn't exist
+            if not self.blocked_terms_file.exists():
+                with open(self.blocked_terms_file, 'w') as f:
+                    json.dump([], f)
+            
+            # Create punishments file if it doesn't exist
+            if not self.punishments_file.exists():
+                with open(self.punishments_file, 'w') as f:
+                    json.dump([], f)
+        except Exception as e:
+            print(f"Error ensuring blocked terms files exist: {e}")
+
+    def load_blocked_terms(self):
+        """Load blocked terms from JSON file"""
+        try:
+            with open(self.blocked_terms_file, 'r') as f:
+                content = f.read().strip()
+                if not content:
+                    return []
+                return json.loads(content)
+        except Exception as e:
+            print(f"Error loading blocked terms: {e}")
+            return []
+
+    def save_blocked_terms(self, terms):
+        """Save blocked terms to JSON file"""
+        try:
+            with open(self.blocked_terms_file, 'w') as f:
+                json.dump(terms, f, indent=2)
+            return True
+        except Exception as e:
+            print(f"Error saving blocked terms: {e}")
+            return False
+
+    def load_punishments(self):
+        """Load punishment records from JSON file"""
+        try:
+            with open(self.punishments_file, 'r') as f:
+                content = f.read().strip()
+                if not content:
+                    return []
+                return json.loads(content)
+        except Exception as e:
+            print(f"Error loading punishments: {e}")
+            return []
+
+    def save_punishments(self, punishments):
+        """Save punishment records to JSON file"""
+        try:
+            with open(self.punishments_file, 'w') as f:
+                json.dump(punishments, f, indent=2)
+            return True
+        except Exception as e:
+            print(f"Error saving punishments: {e}")
+            return False
+
+    def add_punishment_record(self, user_id, guild_id, term, punishment_type, duration=None):
+        """Add a punishment record to the file"""
+        try:
+            punishments = self.load_punishments()
+            record = {
+                "user_id": str(user_id),
+                "guild_id": str(guild_id),
+                "term": term,
+                "punishment_type": punishment_type,
+                "duration": duration,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+            punishments.append(record)
+            return self.save_punishments(punishments)
+        except Exception as e:
+            print(f"Error adding punishment record: {e}")
+            return False
+
+    def normalize_text(self, text):
+        """Normalize text for comparison (remove spaces, special chars, convert to lowercase)"""
+        if not text:
+            return ""
+        # Convert to lowercase and remove spaces, punctuation, and special characters
+        normalized = re.sub(r'[^a-z0-9]', '', text.lower())
+        return normalized
+
+    def check_blocked_term(self, text):
+        """Check if text contains any blocked terms"""
+        if not text:
+            return None
+            
+        blocked_terms = self.load_blocked_terms()
+        normalized_text = self.normalize_text(text)
+        
+        for term_data in blocked_terms:
+            if isinstance(term_data, dict):
+                term = term_data.get('term', '')
+                punishment = term_data.get('punishment', 'mute')
+                duration = term_data.get('duration', '10m')
+            else:
+                # Handle old format (just strings)
+                term = str(term_data)
+                punishment = 'mute'
+                duration = '10m'
+            
+            normalized_term = self.normalize_text(term)
+            if normalized_term and normalized_term in normalized_text:
+                return {
+                    'term': term,
+                    'punishment': punishment,
+                    'duration': duration
+                }
+        
+        return None
+
+    def parse_duration(self, duration_str):
+        """Parse duration string and return seconds. Reuses existing logic from admin commands"""
+        if not duration_str:
+            return 600  # Default 10 minutes
+        
+        try:
+            # Regular expression to parse time format (reuse from existing commands)
+            time_pattern = re.compile(r'(\d+)([smhd])')
+            match = time_pattern.match(duration_str.lower())
+            
+            if not match:
+                # Try parsing as just a number (assume minutes)
+                try:
+                    return int(duration_str) * 60
+                except ValueError:
+                    return 600  # Default 10 minutes
+            
+            amount = int(match.group(1))
+            unit = match.group(2)
+            
+            # Convert to seconds
+            multipliers = {'s': 1, 'm': 60, 'h': 3600, 'd': 86400}
+            return amount * multipliers[unit]
+            
+        except Exception as e:
+            print(f"Error parsing duration {duration_str}: {e}")
+            return 600  # Default 10 minutes
+
+    async def apply_punishment(self, message, term_data):
+        """Apply punishment for blocked term usage"""
+        try:
+            member = message.author
+            guild = message.guild
+            
+            if not member or not guild:
+                return
+            
+            punishment_type = term_data.get('punishment', 'mute')
+            duration = term_data.get('duration', '10m')
+            term = term_data.get('term', 'unknown')
+            
+            # Record the punishment
+            self.add_punishment_record(
+                member.id, 
+                guild.id, 
+                term, 
+                punishment_type, 
+                duration
+            )
+            
+            # Apply the punishment
+            if punishment_type == 'mute':
+                muted_role = await self.get_or_create_muted_role_for_message(guild)
+                if muted_role and muted_role not in member.roles:
+                    await member.add_roles(muted_role)
+                    
+                    # Delete the message
+                    try:
+                        await message.delete()
+                    except:
+                        pass
+                    
+                    # Send notification
+                    embed = discord.Embed(
+                        title="Blocked Term Detected",
+                        description=f"{member.mention} has been muted for {duration} for using a blocked term.",
+                        color=discord.Color.red()
+                    )
+                    embed.add_field(name="Term", value=f"||{term}||", inline=True)
+                    embed.add_field(name="Duration", value=duration, inline=True)
+                    await message.channel.send(embed=embed)
+                    
+                    # Schedule unmute
+                    duration_seconds = self.parse_duration(duration)
+                    asyncio.create_task(self.schedule_unmute_for_blocked_term(guild, member, muted_role, duration_seconds))
+            
+            elif punishment_type == 'kick':
+                try:
+                    await message.delete()
+                except:
+                    pass
+                
+                embed = discord.Embed(
+                    title="Blocked Term Detected",
+                    description=f"{member.mention} has been kicked for using a blocked term.",
+                    color=discord.Color.red()
+                )
+                embed.add_field(name="Term", value=f"||{term}||", inline=True)
+                await message.channel.send(embed=embed)
+                
+                await member.kick(reason=f"Used blocked term: {term}")
+            
+            elif punishment_type == 'ban':
+                try:
+                    await message.delete()
+                except:
+                    pass
+                
+                embed = discord.Embed(
+                    title="Blocked Term Detected",
+                    description=f"{member.mention} has been banned for using a blocked term.",
+                    color=discord.Color.red()
+                )
+                embed.add_field(name="Term", value=f"||{term}||", inline=True)
+                await message.channel.send(embed=embed)
+                
+                await member.ban(reason=f"Used blocked term: {term}")
+                
+        except Exception as e:
+            print(f"Error applying punishment: {e}")
+
+    async def get_or_create_muted_role_for_message(self, guild):
+        """Get or create muted role for blocked terms (reuses existing logic)"""
+        try:
+            muted_role = discord.utils.get(guild.roles, name="Muted")
+            if not muted_role:
+                muted_role = await guild.create_role(name="Muted")
+                for channel in guild.channels:
+                    await channel.set_permissions(muted_role, speak=False, send_messages=False)
+            return muted_role
+        except Exception as e:
+            print(f"Error creating muted role: {e}")
+            return None
+
+    async def schedule_unmute_for_blocked_term(self, guild, member, muted_role, duration_seconds):
+        """Schedule unmute for blocked term punishment"""
+        try:
+            await asyncio.sleep(duration_seconds)
+            
+            # Re-fetch member to ensure they're still in the server
+            try:
+                member = await guild.fetch_member(member.id)
+                if muted_role in member.roles:
+                    await member.remove_roles(muted_role)
+            except discord.NotFound:
+                pass  # Member left the server
+        except Exception as e:
+            print(f"Error in scheduled unmute: {e}")
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        """Listen for messages and check for blocked terms"""
+        # Ignore bot messages
+        if message.author.bot:
+            return
+        
+        # Ignore DMs
+        if not message.guild:
+            return
+        
+        # Ignore messages from administrators
+        if message.author.guild_permissions.administrator:
+            return
+        
+        # Check for blocked terms
+        term_data = self.check_blocked_term(message.content)
+        if term_data:
+            await self.apply_punishment(message, term_data)
+
+    # ============ BLOCKED TERMS COMMANDS ============
+
+    @commands.command()
+    @has_permissions(administrator=True)
+    async def blockterm(self, ctx, *, args):
+        """Add a blocked term with punishment type and duration
+        
+        Usage: 
+        blockterm <term> [mute|kick|ban] [duration]
+        
+        Examples:
+        blockterm badword
+        blockterm "bad phrase" mute 30m
+        blockterm spam kick
+        blockterm severe ban
+        """
+        try:
+            parts = args.split()
+            if not parts:
+                raise commands.CommandError("Please specify a term to block.")
+            
+            # Parse arguments
+            if args.startswith('"') and '"' in args[1:]:
+                # Handle quoted terms
+                end_quote = args.find('"', 1)
+                term = args[1:end_quote]
+                remaining = args[end_quote+1:].strip().split()
+            else:
+                # Handle single word terms
+                term = parts[0]
+                remaining = parts[1:]
+            
+            # Set defaults
+            punishment = 'mute'
+            duration = '10m'
+            
+            # Parse remaining arguments
+            if len(remaining) >= 1:
+                if remaining[0].lower() in ['mute', 'kick', 'ban']:
+                    punishment = remaining[0].lower()
+                    if len(remaining) >= 2:
+                        duration = remaining[1]
+                else:
+                    # First arg is duration, keep default punishment
+                    duration = remaining[0]
+            
+            if len(remaining) >= 2 and remaining[0].lower() in ['mute', 'kick', 'ban']:
+                duration = remaining[1]
+            
+            # Validate punishment type
+            if punishment not in ['mute', 'kick', 'ban']:
+                raise commands.CommandError("Punishment type must be 'mute', 'kick', or 'ban'.")
+            
+            # Load current terms
+            blocked_terms = self.load_blocked_terms()
+            
+            # Check if term already exists
+            for existing_term in blocked_terms:
+                if isinstance(existing_term, dict):
+                    if existing_term.get('term', '').lower() == term.lower():
+                        raise commands.CommandError(f"Term '{term}' is already blocked.")
+                elif str(existing_term).lower() == term.lower():
+                    raise commands.CommandError(f"Term '{term}' is already blocked.")
+            
+            # Add new term
+            new_term = {
+                'term': term,
+                'punishment': punishment,
+                'duration': duration,
+                'added_by': str(ctx.author.id),
+                'added_at': datetime.utcnow().isoformat()
+            }
+            
+            blocked_terms.append(new_term)
+            
+            if self.save_blocked_terms(blocked_terms):
+                embed = discord.Embed(
+                    title="Term Blocked",
+                    description=f"Successfully added blocked term.",
+                    color=discord.Color.green()
+                )
+                embed.add_field(name="Term", value=f"||{term}||", inline=True)
+                embed.add_field(name="Punishment", value=punishment.title(), inline=True)
+                if punishment == 'mute':
+                    embed.add_field(name="Duration", value=duration, inline=True)
+                await ctx.send(embed=embed)
+            else:
+                raise commands.CommandError("Failed to save blocked term.")
+                
+        except commands.CommandError:
+            raise
+        except Exception as e:
+            raise commands.CommandError(f"An error occurred: {str(e)}")
+
+    @commands.command()
+    @has_permissions(administrator=True)
+    async def unblockterm(self, ctx, *, term):
+        """Remove a blocked term
+        
+        Usage: unblockterm <term>
+        """
+        try:
+            blocked_terms = self.load_blocked_terms()
+            
+            # Find and remove the term
+            removed = False
+            for i, blocked_term in enumerate(blocked_terms):
+                if isinstance(blocked_term, dict):
+                    if blocked_term.get('term', '').lower() == term.lower():
+                        blocked_terms.pop(i)
+                        removed = True
+                        break
+                elif str(blocked_term).lower() == term.lower():
+                    blocked_terms.pop(i)
+                    removed = True
+                    break
+            
+            if not removed:
+                raise commands.CommandError(f"Term '{term}' is not in the blocked list.")
+            
+            if self.save_blocked_terms(blocked_terms):
+                embed = discord.Embed(
+                    title="Term Unblocked",
+                    description=f"Successfully removed blocked term: ||{term}||",
+                    color=discord.Color.green()
+                )
+                await ctx.send(embed=embed)
+            else:
+                raise commands.CommandError("Failed to save changes.")
+                
+        except commands.CommandError:
+            raise
+        except Exception as e:
+            raise commands.CommandError(f"An error occurred: {str(e)}")
+
+    @commands.command()
+    @has_permissions(administrator=True)
+    async def blockedterms(self, ctx):
+        """List all blocked terms"""
+        try:
+            blocked_terms = self.load_blocked_terms()
+            
+            if not blocked_terms:
+                embed = discord.Embed(
+                    title="Blocked Terms",
+                    description="No terms are currently blocked.",
+                    color=discord.Color.blue()
+                )
+                await ctx.send(embed=embed)
+                return
+            
+            embed = discord.Embed(
+                title="Blocked Terms",
+                description=f"Total blocked terms: {len(blocked_terms)}",
+                color=discord.Color.blue()
+            )
+            
+            # Group terms by punishment type
+            mute_terms = []
+            kick_terms = []
+            ban_terms = []
+            
+            for term_data in blocked_terms:
+                if isinstance(term_data, dict):
+                    term = term_data.get('term', 'Unknown')
+                    punishment = term_data.get('punishment', 'mute')
+                    duration = term_data.get('duration', '10m')
+                    
+                    if punishment == 'mute':
+                        mute_terms.append(f"||{term}|| ({duration})")
+                    elif punishment == 'kick':
+                        kick_terms.append(f"||{term}||")
+                    elif punishment == 'ban':
+                        ban_terms.append(f"||{term}||")
+                else:
+                    # Handle old format
+                    mute_terms.append(f"||{term_data}|| (10m)")
+            
+            if mute_terms:
+                embed.add_field(
+                    name="🔇 Mute Terms",
+                    value="\n".join(mute_terms[:10]) + ("\n..." if len(mute_terms) > 10 else ""),
+                    inline=False
+                )
+            
+            if kick_terms:
+                embed.add_field(
+                    name="👢 Kick Terms",
+                    value="\n".join(kick_terms[:10]) + ("\n..." if len(kick_terms) > 10 else ""),
+                    inline=False
+                )
+            
+            if ban_terms:
+                embed.add_field(
+                    name="🔨 Ban Terms",
+                    value="\n".join(ban_terms[:10]) + ("\n..." if len(ban_terms) > 10 else ""),
+                    inline=False
+                )
+            
+            if len(blocked_terms) > 30:
+                embed.set_footer(text="Only showing first 10 terms per category. Use individual commands to manage specific terms.")
+            
+            await ctx.send(embed=embed)
+            
+        except Exception as e:
+            raise commands.CommandError(f"An error occurred: {str(e)}")
 
     @commands.command()
     @has_permissions(administrator=True)
@@ -1447,6 +1936,9 @@ class AdminCog(commands.Cog):
     @unjail.error
     @clear.error
     @cclear.error
+    @blockterm.error
+    @unblockterm.error
+    @blockedterms.error
     async def admin_command_error(self, ctx, error):
         if isinstance(error, commands.MissingPermissions):
             embed = discord.Embed(
