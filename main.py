@@ -19,6 +19,8 @@ from lastfm import LastFMCog
 from birthday import BirthdayCog
 from timezone import TimezoneCog
 from snipe import SnipeCog
+# Import your new cog here
+# from mycog import MyCog
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
@@ -175,6 +177,8 @@ async def setup_hook():
         await client.add_cog(BirthdayCog(client))
         await client.add_cog(TimezoneCog(client))
         await client.add_cog(SnipeCog(client))
+        # Add your new cog here
+        # await client.add_cog(MyCog(client))
         print("All cogs loaded successfully")
     except Exception as e:
         print(f"Error loading cogs: {e}")
