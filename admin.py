@@ -460,8 +460,13 @@ class AdminCog(commands.Cog):
                     if len(remaining) >= 2:
                         duration = remaining[1]
                 else:
-                    # First arg is duration, keep default punishment
-                    duration = remaining[0]
+                    # First arg might be duration, but validate it's a reasonable duration format
+                    potential_duration = remaining[0]
+                    # Basic duration validation - should contain numbers and valid time units
+                    if any(char.isdigit() for char in potential_duration) and any(unit in potential_duration.lower() for unit in ['s', 'm', 'h', 'd']):
+                        duration = potential_duration
+                    else:
+                        raise commands.CommandError(f"Invalid argument '{potential_duration}'. Expected punishment type (mute/kick/ban) or duration (e.g., 30m).")
             
             if len(remaining) >= 2 and remaining[0].lower() in ['mute', 'kick', 'ban']:
                 duration = remaining[1]
