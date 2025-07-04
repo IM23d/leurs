@@ -29,6 +29,9 @@ class AdminCog(commands.Cog):
         self.roles_file = self.data_dir / "saved_roles.json"
         self.roles_info_file = self.data_dir / "roles_info.json"
         
+        # Construction mode file path
+        self.construction_roles_file = self.data_dir / "construction_roles.json"
+        
         # Nickname history file path
         self.nickname_file = self.data_dir / "nickname_history.json"
         
@@ -1435,6 +1438,194 @@ class AdminCog(commands.Cog):
         except:
             return False
 
+    @commands.group(invoke_without_command=True)
+    @has_permissions(administrator=True)
+    async def construction(self, ctx):
+        """Construction mode commands - Admin only"""
+        if ctx.invoked_subcommand is None:
+            embed = discord.Embed(
+                title="Construction Mode Commands",
+                description="Available subcommands:\n"
+                          "`construction start` - Start construction mode\n"
+                          "`construction end` - End construction mode",
+                color=discord.Color.blue()
+            )
+            await ctx.send(embed=embed)
+
+    @construction.command()
+    @has_permissions(administrator=True)
+    async def start(self, ctx):
+        """Start construction mode - Save all roles and assign construction role to non-admins"""
+        construction_role_id = 1390782282188718221
+        
+        # Check if construction role exists
+        construction_role = ctx.guild.get_role(construction_role_id)
+        if not construction_role:
+            embed = discord.Embed(
+                title="Error",
+                description=f"Construction role with ID {construction_role_id} not found in this server.",
+                color=discord.Color.red()
+            )
+            await ctx.send(embed=embed)
+            return
+
+        status_msg = await ctx.send(embed=discord.Embed(
+            title="Starting Construction Mode",
+            description="Saving current roles and applying construction mode...",
+            color=discord.Color.blue()
+        ))
+
+        try:
+            # Save current roles to construction-specific file
+            saved_roles = {}
+            if os.path.exists(self.construction_roles_file):
+                with open(self.construction_roles_file, 'r') as f:
+                    saved_roles = json.load(f)
+
+            # Initialize guild section if not exists
+            if str(ctx.guild.id) not in saved_roles:
+                saved_roles[str(ctx.guild.id)] = {}
+
+            # Process each member
+            members_processed = 0
+            for member in ctx.guild.members:
+                # Skip bots
+                if member.bot:
+                    continue
+
+                # Save member's current roles (excluding default role)
+                role_ids = [role.id for role in member.roles if role.id != ctx.guild.default_role.id]
+                saved_roles[str(ctx.guild.id)][str(member.id)] = role_ids
+
+                # If member is not an admin, remove all roles and assign construction role
+                if not member.guild_permissions.administrator:
+                    # Remove all roles except default
+                    roles_to_remove = [role for role in member.roles if role.id != ctx.guild.default_role.id]
+                    if roles_to_remove:
+                        await member.remove_roles(*roles_to_remove, reason="Construction mode started")
+                    
+                    # Add construction role
+                    await member.add_roles(construction_role, reason="Construction mode started")
+
+                members_processed += 1
+
+            # Save the roles data
+            with open(self.construction_roles_file, 'w') as f:
+                json.dump(saved_roles, f, indent=2)
+
+            # Update status message
+            await status_msg.edit(embed=discord.Embed(
+                title="Construction Mode Started",
+                description=f"Successfully processed {members_processed} members.\n"
+                          f"Non-admin roles have been saved and construction role assigned.\n"
+                          f"Administrators retain their roles.",
+                color=discord.Color.green()
+            ))
+
+        except Exception as e:
+            await status_msg.edit(embed=discord.Embed(
+                title="Error",
+                description=f"Failed to start construction mode: {str(e)}",
+                color=discord.Color.red()
+            ))
+            print(f"Error in construction start: {e}")
+
+    @construction.command()
+    @has_permissions(administrator=True)
+    async def end(self, ctx):
+        """End construction mode - Restore original roles and remove construction role"""
+        construction_role_id = 1390782282188718221
+        
+        # Check if construction roles file exists
+        if not os.path.exists(self.construction_roles_file):
+            embed = discord.Embed(
+                title="Error",
+                description="No construction mode data found. Construction mode may not have been started.",
+                color=discord.Color.red()
+            )
+            await ctx.send(embed=embed)
+            return
+
+        status_msg = await ctx.send(embed=discord.Embed(
+            title="Ending Construction Mode",
+            description="Restoring original roles and removing construction role...",
+            color=discord.Color.blue()
+        ))
+
+        try:
+            # Load saved roles
+            with open(self.construction_roles_file, 'r') as f:
+                saved_roles = json.load(f)
+
+            guild_id = str(ctx.guild.id)
+            if guild_id not in saved_roles:
+                await status_msg.edit(embed=discord.Embed(
+                    title="Error",
+                    description="No saved roles found for this guild.",
+                    color=discord.Color.red()
+                ))
+                return
+
+            construction_role = ctx.guild.get_role(construction_role_id)
+            members_processed = 0
+            roles_restored = 0
+
+            # Process each member in the guild
+            for member in ctx.guild.members:
+                # Skip bots
+                if member.bot:
+                    continue
+
+                member_id = str(member.id)
+                
+                # Remove construction role if member has it
+                if construction_role and construction_role in member.roles:
+                    await member.remove_roles(construction_role, reason="Construction mode ended")
+
+                # Restore original roles if we have them saved
+                if member_id in saved_roles[guild_id]:
+                    role_ids = saved_roles[guild_id][member_id]
+                    
+                    # Get valid roles that still exist in the server
+                    roles_to_add = []
+                    for role_id in role_ids:
+                        role = ctx.guild.get_role(int(role_id))
+                        if role and not role.managed and role.id != construction_role_id:
+                            roles_to_add.append(role)
+
+                    # Remove existing roles (except default) before restoring
+                    roles_to_remove = [role for role in member.roles 
+                                     if role.id != ctx.guild.default_role.id and role.id != construction_role_id]
+                    if roles_to_remove:
+                        await member.remove_roles(*roles_to_remove, reason="Construction mode ended - removing current roles")
+
+                    # Add original roles back
+                    if roles_to_add:
+                        await member.add_roles(*roles_to_add, reason="Construction mode ended - restoring original roles")
+                        roles_restored += len(roles_to_add)
+
+                members_processed += 1
+
+            # Delete the construction roles file
+            os.remove(self.construction_roles_file)
+
+            # Update status message
+            await status_msg.edit(embed=discord.Embed(
+                title="Construction Mode Ended",
+                description=f"Successfully processed {members_processed} members.\n"
+                          f"Restored {roles_restored} roles total.\n"
+                          f"Construction role removed from all members.",
+                color=discord.Color.green()
+            ))
+
+        except Exception as e:
+            await status_msg.edit(embed=discord.Embed(
+                title="Error",
+                description=f"Failed to end construction mode: {str(e)}",
+                color=discord.Color.red()
+            ))
+            print(f"Error in construction end: {e}")
+
     @ban.error
     @kick.error
     @mute.error
@@ -1447,6 +1638,7 @@ class AdminCog(commands.Cog):
     @unjail.error
     @clear.error
     @cclear.error
+    @construction.error
     async def admin_command_error(self, ctx, error):
         if isinstance(error, commands.MissingPermissions):
             embed = discord.Embed(
