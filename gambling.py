@@ -1,304 +1,130 @@
+"""
+Gambling main cog module.
+Handles gambling games and betting functionality.
+Dynamically loads all gambling command modules and integrates with the economy system.
+"""
+
 import discord
 from discord.ext import commands
-import random
-import json
 import os
-import datetime
+import importlib
+import asyncio
+from pathlib import Path
 
 class GamblingCog(commands.Cog):
     def __init__(self, client):
         self.client = client
-    
-    async def get_bank_data(self):
-        if not os.path.exists('data'):
-            os.makedirs('data')
+        self.command_modules = []
         
-        if not os.path.exists('data/bank.json'):
-            with open('data/bank.json', 'w') as f:
-                json.dump({}, f)
-
-        with open('data/bank.json', 'r') as f:
-            content = f.read().strip()
-            if not content:
-                users = {}
-            else:
-                try:
-                    users = json.loads(content)
-                except json.JSONDecodeError:
-                    users = {}
-            
-        if not content:
-            with open('data/bank.json', 'w') as f:
-                json.dump(users, f)
+        # Initialize helpers - will be set in cog_load
+        self.data_manager = None
+        
+    async def cog_load(self):
+        """Called when the cog is loaded."""
+        # Import and initialize helpers
+        from gambling.helpers.data_manager import GamblingDataManager
+        
+        self.data_manager = GamblingDataManager()
+        
+        # Load all command modules
+        await self.load_commands()
+        
+    async def load_commands(self):
+        """Dynamically load all command modules from the gambling directory."""
+        gambling_dir = Path(__file__).parent / 'gambling'
+        
+        if not gambling_dir.exists():
+            print(f"Gambling directory not found: {gambling_dir}")
+            return
+        
+        # Define subdirectories to load from
+        subdirs = ['commands']
+        
+        for subdir in subdirs:
+            subdir_path = gambling_dir / subdir
+            if not subdir_path.exists():
+                continue
                 
-        return users
-    
-    async def open_account(self, user):
-        users = await self.get_bank_data()
-
-        if str(user.id) in users:
-            return False
-        else:
-            users[str(user.id)] = {}
-            users[str(user.id)]["wallet"] = 0
-            users[str(user.id)]["bank"] = 0
-
-        with open('data/bank.json', 'w') as f:
-            json.dump(users, f)
-        return True
-    
-    @commands.command()
-    async def gamble(self, ctx, amount=None):
-        await self.open_account(ctx.author)
-        users = await self.get_bank_data()
-        user = ctx.author
-        
-        if amount is None:
-            embed = discord.Embed(
-                title="Error",
-                description="Please specify an amount to gamble",
-                color=discord.Color.red()
-            )
-            await ctx.send(embed=embed)
-            return
+            # Get all Python files in subdirectory
+            command_files = [f.stem for f in subdir_path.glob('*.py') if not f.stem.startswith('__')]
             
-        if amount == "all":
-            amount = users[str(user.id)]["wallet"]
-        elif isinstance(amount, str) and "%" in amount:
-            try:
-                percentage = int(amount.replace("%", ""))
-                if percentage <= 0 or percentage > 100:
-                    raise ValueError
-                amount = int(users[str(user.id)]["wallet"] * (percentage / 100))
-            except ValueError:
-                embed = discord.Embed(
-                    title="Error",
-                    description="Please enter a valid percentage between 1% and 100%",
-                    color=discord.Color.red()
-                )
-                await ctx.send(embed=embed)
-                return
-        else:
-            try:
-                amount = int(amount)
-            except ValueError:
-                embed = discord.Embed(
-                    title="Error",
-                    description="Please enter a valid number, percentage, or 'all'",
-                    color=discord.Color.red()
-                )
-                await ctx.send(embed=embed)
-                return
-        
-        wallet_amt = users[str(user.id)]["wallet"]
-        
-        if amount <= 0:
-            embed = discord.Embed(
-                title="Error",
-                description="Amount must be positive!",
-                color=discord.Color.red()
-            )
-            await ctx.send(embed=embed)
-            return
-            
-        if amount > wallet_amt:
-            embed = discord.Embed(
-                title="Error",
-                description="You don't have enough coins!",
-                color=discord.Color.red()
-            )
-            await ctx.send(embed=embed)
-            return
-        
-        # Coin flip - heads or tails
-        result = "heads" if random.randint(1, 2) == 1 else "tails"
-        win = result == "heads"  # Win on heads, lose on tails
-        
-        # Update balance
-        if win:
-            users[str(user.id)]["wallet"] += amount
-            new_balance = users[str(user.id)]["wallet"]
-            color = discord.Color.green()
-            title = "You Won!"
-            description = f"The coin landed on **{result}**! You won **{amount} coins**!"
-        else:
-            users[str(user.id)]["wallet"] -= amount
-            new_balance = users[str(user.id)]["wallet"]
-            color = discord.Color.red()
-            title = "You Lost!"
-            description = f"The coin landed on **{result}**! You lost **{amount} coins**!"
-        
-        # Save updated data
-        with open('data/bank.json', 'w') as f:
-            json.dump(users, f)
-        
-        # Create and send embed
-        embed = discord.Embed(
-            title=title,
-            description=description,
-            color=color
-        )
-        
-        embed.add_field(
-            name="New Balance", 
-            value=f"{new_balance} coins",
-            inline=False
-        )
-        
-        # Remove thumbnail images and just use color coding
-        embed.set_footer(text=f"Requested by {ctx.author.name}", icon_url=ctx.author.avatar.url if ctx.author.avatar else ctx.author.default_avatar.url)
-        embed.timestamp = datetime.datetime.utcnow()
-        
-        await ctx.send(embed=embed)
-import discord
-from discord.ext import commands
-import random
-import json
-import os
-import datetime
-
-class GamblingCog(commands.Cog):
-    def __init__(self, client):
-        self.client = client
-    
-    async def get_bank_data(self):
-        if not os.path.exists('data'):
-            os.makedirs('data')
-        
-        if not os.path.exists('data/bank.json'):
-            with open('data/bank.json', 'w') as f:
-                json.dump({}, f)
-
-        with open('data/bank.json', 'r') as f:
-            content = f.read().strip()
-            if not content:
-                users = {}
-            else:
+            for command_file in command_files:
                 try:
-                    users = json.loads(content)
-                except json.JSONDecodeError:
-                    users = {}
-            
-        if not content:
-            with open('data/bank.json', 'w') as f:
-                json.dump(users, f)
-                
-        return users
+                    # Import the command module
+                    module_path = f'gambling.{subdir}.{command_file}'
+                    module = importlib.import_module(module_path)
+                    
+                    # Check if module has a command class to add
+                    if hasattr(module, 'GambleCommand'):
+                        command_class = getattr(module, 'GambleCommand')
+                        if issubclass(command_class, commands.Cog):
+                            # Add the command cog to the client
+                            command_cog = command_class(self.client)
+                            await self.client.add_cog(command_cog)
+                            self.command_modules.append(module_path)
+                            print(f"Loaded Gambling command: {subdir}/{command_file}")
+                    else:
+                        print(f"Warning: Gambling command {subdir}/{command_file} has no recognized command class")
+                        
+                except Exception as e:
+                    print(f"Error loading Gambling command {subdir}/{command_file}: {e}")
     
-    async def open_account(self, user):
-        users = await self.get_bank_data()
+    # Global gambling error handler
+    async def gambling_command_error(self, ctx, error):
+        """Handle errors for gambling commands."""
+        if isinstance(error, commands.BadArgument):
+            embed = discord.Embed(
+                title="❌ Invalid Amount",
+                description="Please provide a valid amount. You can use numbers, 'all', or percentages like '50%'.",
+                color=discord.Color.red()
+            )
+            await ctx.send(embed=embed)
+            return True
+        elif isinstance(error, commands.CommandOnCooldown):
+            embed = discord.Embed(
+                title="⏰ Cooldown Active",
+                description=f"Please wait {error.retry_after:.1f} seconds before gambling again.",
+                color=discord.Color.orange()
+            )
+            await ctx.send(embed=embed)
+            return True
+        elif isinstance(error, commands.MissingRequiredArgument):
+            embed = discord.Embed(
+                title="❌ Missing Amount",
+                description="Please specify an amount to gamble. Example: `!gamble 100` or `!gamble all`",
+                color=discord.Color.red()
+            )
+            await ctx.send(embed=embed)
+            return True
+        
+        # Return False to let the global error handler deal with it
+        return False
 
-        if str(user.id) in users:
-            return False
-        else:
-            users[str(user.id)] = {}
-            users[str(user.id)]["wallet"] = 0
-            users[str(user.id)]["bank"] = 0
+async def setup(client):
+    """Setup function for the Gambling cog."""
+    try:
+        cog = GamblingCog(client)
+        await client.add_cog(cog)
+        
+        print("Gambling cog and commands loaded successfully")
+        
+    except Exception as e:
+        print(f"Error loading Gambling cog: {e}")
 
-        with open('data/bank.json', 'w') as f:
-            json.dump(users, f)
-        return True
-    
-    @commands.command()
-    async def gamble(self, ctx, amount=None):
-        await self.open_account(ctx.author)
-        users = await self.get_bank_data()
-        user = ctx.author
+async def teardown(client):
+    """Teardown function for the Gambling cog."""
+    try:
+        # Remove main cog
+        cog = client.get_cog('GamblingCog')
+        if cog:
+            await client.remove_cog('GamblingCog')
         
-        if amount is None:
-            embed = discord.Embed(
-                title="Error",
-                description="Please specify an amount to gamble",
-                color=discord.Color.red()
-            )
-            await ctx.send(embed=embed)
-            return
-            
-        if amount == "all":
-            amount = users[str(user.id)]["wallet"]
-        elif isinstance(amount, str) and "%" in amount:
-            try:
-                percentage = int(amount.replace("%", ""))
-                if percentage <= 0 or percentage > 100:
-                    raise ValueError
-                amount = int(users[str(user.id)]["wallet"] * (percentage / 100))
-            except ValueError:
-                embed = discord.Embed(
-                    title="Error",
-                    description="Please enter a valid percentage between 1% and 100%",
-                    color=discord.Color.red()
-                )
-                await ctx.send(embed=embed)
-                return
-        else:
-            try:
-                amount = int(amount)
-            except ValueError:
-                embed = discord.Embed(
-                    title="Error",
-                    description="Please enter a valid number, percentage, or 'all'",
-                    color=discord.Color.red()
-                )
-                await ctx.send(embed=embed)
-                return
+        # Remove command cogs
+        gamble_cog = client.get_cog('GambleCommand')
+        if gamble_cog:
+            await client.remove_cog('GambleCommand')
         
-        wallet_amt = users[str(user.id)]["wallet"]
+        print("Gambling cog unloaded successfully")
         
-        if amount <= 0:
-            embed = discord.Embed(
-                title="Error",
-                description="Amount must be positive!",
-                color=discord.Color.red()
-            )
-            await ctx.send(embed=embed)
-            return
-            
-        if amount > wallet_amt:
-            embed = discord.Embed(
-                title="Error",
-                description="You don't have enough coins!",
-                color=discord.Color.red()
-            )
-            await ctx.send(embed=embed)
-            return
-        
-        # Coin flip - heads or tails
-        result = "heads" if random.randint(1, 2) == 1 else "tails"
-        win = result == "heads"  # Win on heads, lose on tails
-        
-        # Update balance
-        if win:
-            users[str(user.id)]["wallet"] += amount
-            new_balance = users[str(user.id)]["wallet"]
-            color = discord.Color.green()
-            title = "You Won!"
-            description = f"The coin landed on **{result}**! You won **{amount} coins**!"
-        else:
-            users[str(user.id)]["wallet"] -= amount
-            new_balance = users[str(user.id)]["wallet"]
-            color = discord.Color.red()
-            title = "You Lost!"
-            description = f"The coin landed on **{result}**! You lost **{amount} coins**!"
-        
-        # Save updated data
-        with open('data/bank.json', 'w') as f:
-            json.dump(users, f)
-        
-        # Create and send embed
-        embed = discord.Embed(
-            title=title,
-            description=description,
-            color=color
-        )
-        
-        embed.add_field(
-            name="New Balance", 
-            value=f"{new_balance} coins",
-            inline=False
-        )
-        
-        # Remove thumbnail images and just use color coding
-        embed.set_footer(text=f"Requested by {ctx.author.name}", icon_url=ctx.author.avatar.url if ctx.author.avatar else ctx.author.default_avatar.url)
-        embed.timestamp = datetime.datetime.utcnow()
-        
-        await ctx.send(embed=embed)
+    except Exception as e:
+        print(f"Error unloading Gambling cog: {e}")

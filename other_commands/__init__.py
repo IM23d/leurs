@@ -1,0 +1,3 @@
+"""
+Other module package.
+"""
