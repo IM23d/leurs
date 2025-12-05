@@ -231,7 +231,7 @@ async def on_ready():
 
 if __name__ == "__main__":
     load_dotenv()
-    token = os.getenv('bot_token')
+    token = os.getenv('DISCORD_TOKEN')
     
     if token:
         client.run(token)
