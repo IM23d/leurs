@@ -5,7 +5,7 @@ import {
   parsePurgeTarget,
   planPurge,
   purgeScope,
-  withAmountAfterUser,
+  readLeadingWords,
 } from "./purge.service.ts";
 
 const now = 100 * 86_400_000;
@@ -80,20 +80,47 @@ describe("purgeScope", () => {
   });
 });
 
-describe("withAmountAfterUser", () => {
-  it("moves a leading amount out of the text filter", () => {
-    expect(withAmountAfterUser({ amount: undefined, contains: "30m spam" })).toEqual({
+describe("readLeadingWords", () => {
+  const none = { amount: undefined, duplicates: undefined };
+
+  it("moves a leading amount and the duplicates word out of the text filter", () => {
+    expect(readLeadingWords({ ...none, contains: "30m dupes spam" })).toEqual({
       amount: { kind: "since", ms: 1_800_000 },
+      duplicates: true,
       contains: "spam",
     });
-    expect(withAmountAfterUser({ amount: undefined, contains: "20" })).toEqual({
+    expect(readLeadingWords({ ...none, contains: "duplicates 20" })).toEqual({
       amount: { kind: "count", count: 20 },
+      duplicates: true,
       contains: undefined,
     });
   });
 
-  it("leaves plain text and given amounts alone", () => {
-    const values = { amount: undefined, contains: "buy now" };
-    expect(withAmountAfterUser(values)).toBe(values);
+  it("leaves plain text alone", () => {
+    const values = { ...none, contains: "buy now" };
+    expect(readLeadingWords(values)).toBe(values);
+  });
+});
+
+describe("duplicates", () => {
+  const chat = [
+    message("6", "b", "hi"),
+    message("5", "a", "  HELLO   there "),
+    message("4", "b", "spam"),
+    message("3", "a", ""),
+    message("2", "b", "spam"),
+    message("1", "a", "hello there"),
+  ];
+
+  it("deletes repeats and keeps the first copy", () => {
+    expect(planPurge(chat, { duplicates: true }, now).deletable).toEqual(["5", "4"]);
+  });
+
+  it("only checks the given number of latest messages", () => {
+    expect(planPurge(chat, { duplicates: true, amount: 4 }, now).deletable).toEqual([]);
+  });
+
+  it("combines with a user filter", () => {
+    expect(planPurge(chat, { duplicates: true, authorId: "b" }, now).deletable).toEqual(["4"]);
   });
 });

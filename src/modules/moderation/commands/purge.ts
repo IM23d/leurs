@@ -15,7 +15,7 @@ import {
   MAX_PURGE,
   parsePurgeTarget,
   planPurge,
-  withAmountAfterUser,
+  readLeadingWords,
   purgeScope,
   type PurgeTarget,
 } from "../purge.service.ts";
@@ -55,6 +55,7 @@ interface PurgeValues {
   readonly amount: PurgeTarget | undefined;
   readonly user: User | undefined;
   readonly contains: string | undefined;
+  readonly duplicates: boolean | undefined;
 }
 
 const toCandidate = (message: Message) => ({
@@ -71,6 +72,7 @@ async function report(
     tooOld,
     user,
     contains,
+    duplicates,
   }: { deleted: number; tooOld: number } & Omit<PurgeValues, "amount">,
 ): Promise<void> {
   const skipped = tooOld === 0 ? "" : ` Skipped ${tooOld} older than 14 days.`;
@@ -79,7 +81,11 @@ async function report(
     private: true,
     deleteAfter: CONFIRMATION_SECONDS,
   });
-  const filters = [user && `from ${user.toString()}`, contains && `containing "${contains}"`]
+  const filters = [
+    duplicates && "duplicates only",
+    user && `from ${user.toString()}`,
+    contains && `containing "${contains}"`,
+  ]
     .filter(Boolean)
     .join(", ");
   await logModAction(ctx.guild, {
@@ -103,21 +109,27 @@ export const purgeCommand = defineCommand({
       )
       .optional(),
     user: mentionedUser("Only messages from this person").optional(),
+    duplicates: opt
+      .boolean("Only messages that repeat an earlier one, keeping the first")
+      .optional(),
     contains: opt.string("Only messages containing this text").rest().optional(),
   },
   run: async (ctx, values) => {
-    const { amount, user, contains } = withAmountAfterUser(values);
-    if (amount === undefined && user === undefined) {
-      throw new UserError("Give an amount, a time span like `30m`, or a user.");
+    const { amount, user, contains, duplicates } = readLeadingWords(values);
+    if (amount === undefined && user === undefined && !duplicates) {
+      throw new UserError("Give an amount, a time span like `30m`, a user, or `duplicates`.");
     }
     await ctx.defer({ private: true });
-    const scope = purgeScope(amount, user !== undefined || contains !== undefined, Date.now());
+    // With duplicates, a count is the number of messages to check, so no deeper search.
+    const filtered = !duplicates && (user !== undefined || contains !== undefined);
+    const scope = purgeScope(amount, filtered, Date.now());
     const fetched = await recentMessages(ctx, scope.scanLimit, scope.since);
     const plan = planPurge(fetched.map(toCandidate), {
       amount: scope.count,
       since: scope.since,
       authorId: user?.id,
       contains,
+      duplicates,
     });
     if (plan.deletable.length === 0 && plan.tooOld === 0) {
       throw new UserError(
@@ -131,6 +143,6 @@ export const purgeCommand = defineCommand({
     if (ctx.messageId !== undefined) {
       await ctx.channel.messages.delete(ctx.messageId).catch(() => undefined);
     }
-    await report(ctx, { deleted, tooOld: plan.tooOld, user, contains });
+    await report(ctx, { deleted, tooOld: plan.tooOld, user, contains, duplicates });
   },
 });

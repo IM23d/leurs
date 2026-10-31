@@ -35,6 +35,11 @@ interface PurgeFilter {
   readonly since?: number | undefined;
   readonly authorId?: string | undefined;
   readonly contains?: string | undefined;
+  /**
+   * Only messages that repeat an earlier one, keeping the first copy. With `amount`, the last
+   * `amount` messages are checked instead of `amount` messages being deleted.
+   */
+  readonly duplicates?: boolean | undefined;
 }
 
 interface PurgePlan {
@@ -44,17 +49,34 @@ interface PurgePlan {
 }
 
 /** Picks up to `amount` matching messages from `messages`, which run newest first. */
+/** Text that counts as the same message: case and extra spaces are ignored. */
+const duplicateKey = (content: string) => content.trim().replaceAll(/\s+/g, " ").toLowerCase();
+
+/** Messages that repeat an older one in the list, which runs newest first. */
+function repeats(messages: readonly PurgeCandidate[]): PurgeCandidate[] {
+  const seen = new Set<string>();
+  const repeated = new Set<PurgeCandidate>();
+  for (const message of messages.toReversed()) {
+    const key = duplicateKey(message.content);
+    if (key === "") continue;
+    if (seen.has(key)) repeated.add(message);
+    seen.add(key);
+  }
+  return messages.filter((message) => repeated.has(message));
+}
+
+/** Picks the matching messages from `messages`, which run newest first. */
 export function planPurge(
   messages: readonly PurgeCandidate[],
-  { amount = Number.POSITIVE_INFINITY, since = 0, authorId, contains }: PurgeFilter,
+  { amount = Number.POSITIVE_INFINITY, since = 0, authorId, contains, duplicates }: PurgeFilter,
   now = Date.now(),
 ): PurgePlan {
   const text = contains?.toLowerCase();
-  const matching = messages
-    .filter((message) => message.createdAt.getTime() >= since)
+  const inRange = messages.filter((message) => message.createdAt.getTime() >= since);
+  const filtered = (duplicates ? inRange.slice(0, amount) : inRange)
     .filter((message) => authorId === undefined || message.authorId === authorId)
-    .filter((message) => text === undefined || message.content.toLowerCase().includes(text))
-    .slice(0, amount);
+    .filter((message) => text === undefined || message.content.toLowerCase().includes(text));
+  const matching = duplicates ? repeats(filtered) : filtered.slice(0, amount);
   const isRecent = (message: PurgeCandidate) =>
     now - message.createdAt.getTime() < BULK_DELETE_MAX_AGE_MS;
   const deletable = matching.filter(isRecent).map((message) => message.id);
@@ -93,16 +115,31 @@ export function purgeScope(
   };
 }
 
+const DUPLICATE_WORDS = new Set(["duplicates", "duplicate", "dupes", "dupe"]);
+
+interface FreeTextValues {
+  amount: PurgeTarget | undefined;
+  duplicates: boolean | undefined;
+  contains: string | undefined;
+}
+
 /**
- * Lets the amount come after the user, as in `-clear @user 30m`. The parser reads options in
- * order, so there the amount lands at the start of the text filter.
+ * Reads an amount and the word "duplicates" from the start of the text filter, so prefix users
+ * can write `-clear @user 30m duplicates` in any order. The parser reads options in order, so
+ * anything after the user lands in the text filter.
  */
-export function withAmountAfterUser<
-  T extends { amount: PurgeTarget | undefined; contains: string | undefined },
->(values: T): T {
-  if (values.amount !== undefined || values.contains === undefined) return values;
-  const [first = "", ...rest] = values.contains.split(/\s+/);
-  const amount = parsePurgeTarget(first);
-  if (amount === undefined) return values;
-  return { ...values, amount, contains: rest.length > 0 ? rest.join(" ") : undefined };
+export function readLeadingWords<T extends FreeTextValues>(values: T): T {
+  const words = values.contains?.split(/\s+/) ?? [];
+  let { amount, duplicates } = values;
+  let used = 0;
+  for (const word of words) {
+    const target = amount === undefined ? parsePurgeTarget(word) : undefined;
+    if (target) amount = target;
+    else if (DUPLICATE_WORDS.has(word.toLowerCase())) duplicates = true;
+    else break;
+    used += 1;
+  }
+  if (used === 0) return values;
+  const rest = words.slice(used).join(" ");
+  return { ...values, amount, duplicates, contains: rest === "" ? undefined : rest };
 }
