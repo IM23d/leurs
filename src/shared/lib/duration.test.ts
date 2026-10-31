@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatDuration, isPermanent, parseDuration } from "./duration.ts";
+import { formatDuration, formatShortDuration, isPermanent, parseDuration } from "./duration.ts";
 
 describe("parseDuration", () => {
   it.each([
@@ -28,4 +28,10 @@ describe("formatDuration", () => {
 it("recognises permanent", () => {
   expect(isPermanent("Perm")).toBe(true);
   expect(isPermanent("1d")).toBe(false);
+});
+
+it("formats short durations for lists", () => {
+  expect(formatShortDuration(40_000)).toBe("40s");
+  expect(formatShortDuration(300_000)).toBe("5m");
+  expect(formatShortDuration(7_500_000)).toBe("2h 5m");
 });

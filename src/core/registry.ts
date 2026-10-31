@@ -1,4 +1,4 @@
-import type { Command, Leaf } from "./commands/define.ts";
+import { leafAliases, type Command, type Leaf } from "./commands/define.ts";
 import type { Component } from "./components.ts";
 import type { ContextMenu } from "./context-menus.ts";
 import type { EventHandler } from "./events.ts";
@@ -38,7 +38,11 @@ function prefixEntries(command: Command): (readonly [string, Route])[] {
     const path = name === "" ? command.name : `${command.name} ${name}`;
     const route = { command, leaf, path };
     const isDefault = name === "" || name === command.defaultSubcommand;
-    const names = [path, ...leaf.aliases, ...(isDefault ? [command.name, ...command.aliases] : [])];
+    const names = [
+      path,
+      ...leafAliases(command, name),
+      ...(isDefault ? [command.name, ...command.aliases] : []),
+    ];
     return [...new Set(names)].map((key) => [key.toLowerCase(), route] as const);
   });
 }

@@ -1,5 +1,6 @@
 import type { EmbedBuilder, User } from "discord.js";
 
+import { formatShortDuration } from "#shared/lib/duration.ts";
 import { embed, successEmbed } from "#shared/ui/embeds.ts";
 
 import { levelProgress } from "./levels.math.ts";
@@ -14,8 +15,7 @@ const progressBar = (percent: number): string => {
   return "🟦".repeat(filled) + "⬜".repeat(BAR_LENGTH - filled);
 };
 
-const voiceTime = (seconds: number): string =>
-  `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`;
+const voiceTime = (seconds: number): string => formatShortDuration(seconds * 1000);
 
 export function rankEmbed(user: User, name: string, stats: LevelStats): EmbedBuilder {
   const progress = levelProgress(stats.xp);

@@ -27,6 +27,13 @@ Every command works as a slash command and with the server's prefix (default `-`
 | `/rank [user]`                  | Show a member's level, XP and voice time                  | `-level`, `-xp`, `-lvl` |
 | `/levels set <user> <messages>` | Set a member's message count. XP and level follow from it | `-setlevel`             |
 
+## voice log
+
+| Command                                     | Description                                             | Also works as   |
+| ------------------------------------------- | ------------------------------------------------------- | --------------- |
+| `/voicelog now [channel]`                   | Show who is in voice right now and since when           | `-vc`, `-calls` |
+| `/voicelog history [channel] [user] [page]` | Show past calls with join time, leave time and duration |                 |
+
 ## leaderboards
 
 | Command                      | Description                  | Also works as                         |
@@ -117,8 +124,8 @@ Every command works as a slash command and with the server's prefix (default `-`
 | Command                 | Description                            | Also works as |
 | ----------------------- | -------------------------------------- | ------------- |
 | `/birthday show [user]` | Show someone's birthday                | `-bday`       |
-| `/birthday set <date>`  | Set your birthday                      | `-bday set`   |
-| `/birthday list`        | List upcoming birthdays in this server | `-bday list`  |
+| `/birthday set <date>`  | Set your birthday                      |               |
+| `/birthday list`        | List upcoming birthdays in this server |               |
 
 ## timezones
 

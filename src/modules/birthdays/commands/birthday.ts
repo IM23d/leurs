@@ -61,7 +61,6 @@ export const birthdayCommand = defineCommand({
     }),
     set: subcommand({
       description: "Set your birthday",
-      aliases: ["bday set"],
       options: { date: opt.string(`Your birthday. ${FORMAT_HINT}`) },
       run: async (ctx, { date }) => {
         const birthday = parseBirthday(date, todayFor(ctx.user.id));
@@ -73,7 +72,6 @@ export const birthdayCommand = defineCommand({
     }),
     list: subcommand({
       description: "List upcoming birthdays in this server",
-      aliases: ["bday list"],
       run: async (ctx) => {
         await birthdayList.reply(ctx);
       },

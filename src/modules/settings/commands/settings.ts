@@ -17,6 +17,7 @@ const CHANNEL_SETTINGS = {
   "mod-log": { key: "modLogChannelId", label: "Moderation log" },
   "blocked-terms-log": { key: "blockedTermsLogChannelId", label: "Blocked terms log" },
   "level-up": { key: "levelUpChannelId", label: "Level-up messages" },
+  "voice-log": { key: "voiceLogChannelId", label: "Voice log" },
 } as const satisfies Record<string, { key: ChannelSetting; label: string }>;
 
 const ROLE_SETTINGS = {

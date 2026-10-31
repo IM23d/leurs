@@ -7,6 +7,7 @@ export const guildSettings = sqliteTable("guild_settings", {
   modLogChannelId: text(),
   blockedTermsLogChannelId: text(),
   levelUpChannelId: text(),
+  voiceLogChannelId: text(),
   jailRoleId: text(),
 });
 

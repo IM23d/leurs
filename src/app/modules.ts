@@ -19,6 +19,7 @@ import { snipeModule } from "#modules/snipe/index.ts";
 import { timezonesModule } from "#modules/timezones/index.ts";
 import { toolsModule } from "#modules/tools/index.ts";
 import { typingModule } from "#modules/typing/index.ts";
+import { voiceLogModule } from "#modules/voice-log/index.ts";
 import { weatherModule } from "#modules/weather/index.ts";
 
 /** Every feature module the bot loads, in the order /help lists them. Add a module here to enable it. */
@@ -26,6 +27,7 @@ export const modules: readonly Module[] = [
   generalModule,
   settingsModule,
   levelsModule,
+  voiceLogModule,
   leaderboardsModule,
   economyModule,
   moderationModule,

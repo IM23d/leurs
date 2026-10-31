@@ -89,3 +89,13 @@ export function defineCommand<TOptions extends OptionsShape = Record<string, nev
   const leaf = toLeaf({ ...definition, description: definition.description, aliases: [] });
   return { ...base, leaves: new Map([["", leaf]]), defaultSubcommand: undefined };
 }
+
+/**
+ * Prefix aliases of a subcommand. Every command alias also works with the subcommand name, so
+ * with the alias "bday", "bday set" reaches "birthday set" without being listed.
+ */
+export function leafAliases(command: Command, name: string): string[] {
+  const leaf = command.leaves.get(name);
+  const derived = name === "" ? [] : command.aliases.map((alias) => `${alias} ${name}`);
+  return [...new Set([...(leaf?.aliases ?? []), ...derived])];
+}

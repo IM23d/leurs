@@ -4,7 +4,7 @@ import { formatDuration } from "#shared/lib/duration.ts";
 import { joinWithin } from "#shared/lib/text.ts";
 import { embed } from "#shared/ui/embeds.ts";
 
-import type { Command, Leaf } from "./define.ts";
+import { leafAliases, type Command, type Leaf } from "./define.ts";
 import type { AnyOption } from "./options.ts";
 import { usage } from "./values.ts";
 
@@ -44,12 +44,13 @@ export function findHelpTarget(commands: readonly Command[], text: string): Help
   const [first = "", second] = words;
   const pair = second === undefined ? undefined : `${first} ${second}`;
   const leaves = commands.flatMap((command) =>
-    [...command.leaves].map(([name, leaf]) => ({ command, name, leaf })),
+    [...command.leaves.keys()].map((name) => ({ command, name })),
   );
   const byPath = (key: string) =>
     leaves.find(
-      ({ command, name, leaf }) =>
-        (name !== "" && `${command.name} ${name}` === key) || leaf.aliases.includes(key),
+      ({ command, name }) =>
+        (name !== "" && `${command.name} ${name}` === key) ||
+        leafAliases(command, name).includes(key),
     );
   const pairMatch = pair === undefined ? undefined : byPath(pair);
   if (pairMatch) return leafTarget(pairMatch.command, pairMatch.name);
@@ -123,7 +124,7 @@ export function leafHelp(
   const { command, name, leaf } = target;
   const path = pathOf(command, name);
   const options = Object.entries(leaf.options);
-  const aliases = [...leaf.aliases, ...(name === "" ? command.aliases : [])];
+  const aliases = [...leafAliases(command, name), ...(name === "" ? command.aliases : [])];
   const lines = [
     leaf.description,
     "",

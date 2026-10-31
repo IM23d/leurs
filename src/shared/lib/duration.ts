@@ -38,3 +38,12 @@ export function formatDuration(ms: number): string {
     ).parts;
   return parts.length > 0 ? parts.join(", ") : "less than a second";
 }
+
+/** Formats milliseconds compactly for lists: "2h 5m", "5m", "40s". */
+export function formatShortDuration(ms: number): string {
+  const totalMinutes = Math.floor(ms / UNITS.m);
+  if (totalMinutes === 0) return `${Math.max(0, Math.floor(ms / UNITS.s))}s`;
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return hours === 0 ? `${minutes}m` : `${hours}h ${minutes}m`;
+}
