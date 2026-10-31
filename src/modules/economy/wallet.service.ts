@@ -1,6 +1,7 @@
-import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, sql } from "drizzle-orm";
 
 import { db } from "#db/client.ts";
+import { chunks } from "#shared/lib/chunks.ts";
 
 import { balances } from "./economy.schema.ts";
 
@@ -71,12 +72,13 @@ export function beg(
 
 /** Balances of the given users that have an account, richest first. */
 export function balanceRanking(userIds: readonly string[]): { userId: string; balance: number }[] {
-  return userIds.length === 0
-    ? []
-    : db()
+  return chunks(userIds)
+    .flatMap((ids) =>
+      db()
         .select({ userId: balances.userId, balance: balances.balance })
         .from(balances)
-        .where(inArray(balances.userId, [...userIds]))
-        .orderBy(desc(balances.balance), balances.userId)
-        .all();
+        .where(inArray(balances.userId, ids))
+        .all(),
+    )
+    .toSorted((a, b) => b.balance - a.balance || a.userId.localeCompare(b.userId));
 }

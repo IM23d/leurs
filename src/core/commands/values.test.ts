@@ -54,6 +54,34 @@ describe("prefixValues", () => {
   });
 });
 
+describe("strict input", () => {
+  it("reads perm as an empty duration and consumes it", async () => {
+    const options = {
+      duration: opt.duration("Duration").optional(),
+      reason: opt.string("Reason").rest().optional(),
+    };
+    await expect(prefixValues("perm being rude", guild, options)).resolves.toEqual({
+      duration: undefined,
+      reason: "being rude",
+    });
+  });
+
+  it.each(["1e300", "0x10", "1.5", "99999999999999999999"])(
+    "rejects %j as an integer",
+    async (text) => {
+      await expect(prefixValues(text, guild, { n: opt.integer("N") })).rejects.toThrow(
+        ArgumentError,
+      );
+    },
+  );
+
+  it("accepts digit separators", async () => {
+    await expect(prefixValues("1,000", guild, { n: opt.integer("N") })).resolves.toEqual({
+      n: 1000,
+    });
+  });
+});
+
 describe("usage", () => {
   it("marks required and optional options", () => {
     const options = { job: opt.string("Job"), page: opt.integer("Page").optional() };

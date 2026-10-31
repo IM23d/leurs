@@ -30,7 +30,7 @@ export const purgeCommand = defineCommand({
     contains: opt.string("Only messages containing this text").rest().optional(),
   },
   run: async (ctx, { amount, user, contains }) => {
-    await ctx.defer();
+    await ctx.defer({ private: true });
     const candidates = (await recentMessages(ctx)).map((message) => ({
       id: message.id,
       authorId: message.author.id,

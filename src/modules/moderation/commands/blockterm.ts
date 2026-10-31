@@ -8,7 +8,6 @@ import { definePaginator } from "#shared/ui/paginator.ts";
 
 import { blockTerm, listTerms, PUNISHMENTS, unblockTerm } from "../blocked-terms.service.ts";
 import { blockedTermsEmbed, describePunishment } from "../moderation.views.ts";
-import { durationOrPermanent } from "../options.ts";
 
 const MAX_TERM_LENGTH = 100;
 
@@ -20,7 +19,8 @@ export const blockedTermsPaginator = definePaginator({
 export const blocktermCommand = defineCommand({
   name: "blockterm",
   description: "Delete messages with a term and punish whoever sends it",
-  permissions: PermissionFlagsBits.ManageMessages,
+  // Terms trigger automatic kicks and bans carried out with the bot's rank.
+  permissions: PermissionFlagsBits.Administrator,
   defaultSubcommand: "add",
   subcommands: {
     add: subcommand({
@@ -32,7 +32,7 @@ export const blocktermCommand = defineCommand({
         punishment: opt
           .string("What happens to whoever sends it")
           .choices(PUNISHMENTS.map((value) => ({ name: value, value }))),
-        duration: durationOrPermanent("How long a mute or ban lasts, e.g. 10m or 7d").optional(),
+        duration: opt.duration("How long a mute or ban lasts, e.g. 10m or 7d").optional(),
         advanced: opt.boolean("Also catch accents, digits and repeated letters").optional(),
         message: opt.string("What to tell the member instead of the default").rest().optional(),
       },
@@ -43,7 +43,7 @@ export const blocktermCommand = defineCommand({
           guildId: ctx.guild.id,
           term,
           punishment: punishmentType,
-          durationMs: duration ?? undefined,
+          durationMs: duration,
           customText: message,
           advanced,
           addedById: ctx.user.id,

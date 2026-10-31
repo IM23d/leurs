@@ -25,15 +25,18 @@ export const normalizeText = (text: string): string =>
     .replaceAll(/\s+/g, " ")
     .trim();
 
-/** The first term found in `content`, in the order the terms were added. */
+/**
+ * The first term found in `content`, in the order the terms were added. An advanced term that
+ * normalizes to nothing, such as "1337", is skipped, because the empty string matches every message.
+ */
 export function matchTerm(content: string, terms: readonly BlockedTerm[]): BlockedTerm | undefined {
   const lower = content.toLowerCase();
   const normalized = normalizeText(content);
-  return terms.find((term) =>
-    term.advanced
-      ? normalized.includes(normalizeText(term.term))
-      : lower.includes(term.term.toLowerCase()),
-  );
+  return terms.find((term) => {
+    if (!term.advanced) return lower.includes(term.term.toLowerCase());
+    const needle = normalizeText(term.term);
+    return needle !== "" && normalized.includes(needle);
+  });
 }
 
 // The listener checks every message, so terms are cached per server.
@@ -85,6 +88,11 @@ export function blockTerm(input: NewTerm, now = new Date()): BlockedTerm {
     createdAt: now,
   };
   if (values.term === "") throw new UserError("The term can't be empty.");
+  if (values.advanced && normalizeText(values.term) === "") {
+    throw new UserError(
+      "Advanced filtering ignores digits and symbols, so this term would match every message. Use basic filtering.",
+    );
+  }
   const row = db()
     .insert(blockedTerms)
     .values(values)

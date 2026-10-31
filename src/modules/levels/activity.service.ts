@@ -58,6 +58,22 @@ export function setVoiceActive(userId: string, active: boolean, now = Date.now()
   }
 }
 
+/**
+ * Matches the running sessions to the users now in a counted voice channel: ends the sessions
+ * of everyone else and starts sessions for anyone new. Voice events can go missing, for example
+ * when the bot leaves a server or reconnects, so this runs before every flush.
+ */
+export function syncVoiceSessions(activeUserIds: ReadonlySet<string>, now = Date.now()): void {
+  [...voiceSessions.keys()]
+    .filter((userId) => !activeUserIds.has(userId))
+    .forEach((userId) => {
+      setVoiceActive(userId, false, now);
+    });
+  activeUserIds.forEach((userId) => {
+    setVoiceActive(userId, true, now);
+  });
+}
+
 /** Credits running voice sessions, then writes every pending gain to the database. */
 export function flushActivity(now = Date.now()): number {
   for (const [userId, start] of voiceSessions) creditVoice(userId, start, now);

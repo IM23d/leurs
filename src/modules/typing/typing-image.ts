@@ -5,9 +5,11 @@ import { fonts } from "#shared/ui/fonts.ts";
 const FONT_FAMILY = fonts.regular;
 
 const WIDTH = 1000;
-const HEIGHT = 600;
+const MIN_HEIGHT = 600;
 const MARGIN = 50;
 const FONT_SIZE = 24;
+const LINE_HEIGHT = FONT_SIZE * 1.5;
+const FONT = `${FONT_SIZE}px ${FONT_FAMILY}`;
 const NOISE_LINES = 30;
 
 function wrap(ctx: SKRSContext2D, words: readonly string[]): string[] {
@@ -31,16 +33,22 @@ export async function renderWords(
   words: readonly string[],
   random: () => number = Math.random,
 ): Promise<Buffer> {
-  const canvas = createCanvas(WIDTH, HEIGHT);
+  const measure = createCanvas(WIDTH, 1).getContext("2d");
+  measure.font = FONT;
+  const lines = wrap(measure, words);
+  // Long tests wrap to more lines than the default height holds, so the image grows to fit.
+  const height = Math.max(MIN_HEIGHT, 2 * MARGIN + lines.length * LINE_HEIGHT);
+
+  const canvas = createCanvas(WIDTH, height);
   const ctx = canvas.getContext("2d");
   ctx.fillStyle = "#fff";
-  ctx.fillRect(0, 0, WIDTH, HEIGHT);
+  ctx.fillRect(0, 0, WIDTH, height);
 
-  ctx.font = `${FONT_SIZE}px ${FONT_FAMILY}`;
+  ctx.font = FONT;
   ctx.textBaseline = "top";
   ctx.fillStyle = "#000";
-  wrap(ctx, words).forEach((line, index) => {
-    ctx.fillText(line, MARGIN, MARGIN + index * FONT_SIZE * 1.5);
+  lines.forEach((line, index) => {
+    ctx.fillText(line, MARGIN, MARGIN + index * LINE_HEIGHT);
   });
 
   const between = (min: number, max: number) => min + Math.floor(random() * (max - min + 1));
@@ -48,8 +56,8 @@ export async function renderWords(
   for (let index = 0; index < NOISE_LINES; index += 1) {
     ctx.strokeStyle = `rgb(${between(100, 200)}, ${between(100, 200)}, ${between(100, 200)})`;
     ctx.beginPath();
-    ctx.moveTo(between(0, WIDTH), between(0, HEIGHT));
-    ctx.lineTo(between(0, WIDTH), between(0, HEIGHT));
+    ctx.moveTo(between(0, WIDTH), between(0, height));
+    ctx.lineTo(between(0, WIDTH), between(0, height));
     ctx.stroke();
   }
   return canvas.encode("png");

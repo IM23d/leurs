@@ -10,7 +10,7 @@ export const imageEmbed = (
   page: number,
   pageCount: number,
 ): EmbedBuilder =>
-  embed(image.title)
+  embed(image.title || "No title")
     .setTitle(`Image search: ${query}`)
     .setImage(image.url)
     .addFields({ name: "Source", value: `[${image.source || "Link"}](${image.pageUrl})` })

@@ -52,11 +52,3 @@ export function upcomingBirthdays(userIds: ReadonlySet<string>, now = new Date()
     .map((row) => upcomingBirthday(row.userId, toDate(row), now))
     .toSorted((a, b) => a.at.getTime() - b.at.getTime());
 }
-
-/** IDs of every user with a birthday, so callers can check which are server members. */
-export const birthdayUserIds = (): string[] =>
-  db()
-    .select({ userId: birthdays.userId })
-    .from(birthdays)
-    .all()
-    .map((row) => row.userId);

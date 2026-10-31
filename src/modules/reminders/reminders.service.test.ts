@@ -23,9 +23,10 @@ describe("reminders", () => {
     ]);
   });
 
-  it("rejects times in the past and more than a year ahead", () => {
+  it("rejects times in the past, more than a year ahead, or invalid", () => {
     expect(() => remind("1", now)).toThrow(UserError);
     expect(() => remind("1", later(366 * 86_400_000))).toThrow(UserError);
+    expect(() => remind("1", new Date(Number.NaN))).toThrow(UserError);
     expect(remindersOf("1")).toEqual([]);
   });
 

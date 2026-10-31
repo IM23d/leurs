@@ -1,7 +1,11 @@
 import { defineEvent } from "#core/events.ts";
+import { joinWithin } from "#shared/lib/text.ts";
 import { embed } from "#shared/ui/embeds.ts";
 
 import { afkStore, formatAway } from "../afk.service.ts";
+
+const noticeText = (notices: readonly string[]): string =>
+  joinWithin(notices, { more: (hidden) => `And ${hidden} more people are AFK.` });
 
 /** Clears the AFK status of people who talk, and tells people when they mention someone AFK. */
 export const afkMessages = defineEvent({
@@ -31,7 +35,7 @@ export const afkMessages = defineEvent({
       );
     if (notices.length > 0) {
       await message.reply({
-        embeds: [embed(notices.join("\n"))],
+        embeds: [embed(noticeText(notices))],
         allowedMentions: { repliedUser: false },
       });
     }

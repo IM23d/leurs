@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { defineTask } from "#core/tasks/define-task.ts";
+import { removeFromBackup } from "#modules/roles/api.ts";
 
 import { logModAction } from "../mod-log.ts";
 
@@ -12,8 +13,14 @@ export const releaseJailTask = defineTask({
   payload,
   run: async ({ guildId, userId, roleId }, client) => {
     const guild = client.guilds.cache.get(guildId);
-    const member = await guild?.members.fetch(userId).catch(() => undefined);
-    if (!guild || !member?.roles.cache.has(roleId)) return;
+    if (!guild) return;
+    const member = await guild.members.fetch(userId).catch(() => undefined);
+    if (!member) {
+      // The roles module restores backed up roles on rejoin, which would bring the jail role back.
+      removeFromBackup(guildId, userId, roleId);
+      return;
+    }
+    if (!member.roles.cache.has(roleId)) return;
     await member.roles.remove(roleId, "Jail time is over");
     await logModAction(guild, {
       title: "Unjail",

@@ -18,7 +18,11 @@ export function prefixContext(
     const { private: isPrivate, ...options } = toReplyOptions(reply);
     const sent = replied
       ? await channel.send(options)
-      : await message.reply({ ...options, allowedMentions: { repliedUser: false } });
+      : await message.reply({
+          ...options,
+          allowedMentions: { parse: ["users"], repliedUser: false },
+          failIfNotExists: false,
+        });
     replied = true;
     if (isPrivate) {
       setTimeout(() => void sent.delete().catch(() => undefined), PRIVATE_REPLY_LIFETIME_MS);

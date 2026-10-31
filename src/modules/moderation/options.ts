@@ -1,7 +1,6 @@
 import type { Guild, GuildMember, User } from "discord.js";
 
 import { Option, opt } from "#core/commands/options.ts";
-import { isPermanent, parseDuration } from "#shared/lib/duration.ts";
 
 const MENTION_OR_ID = /^(?:<@!?(\d{17,20})>|(\d{17,20}))$/;
 
@@ -42,12 +41,3 @@ export const anyUser = (description: string): Option<User> => {
   const base = opt.user(description);
   return byId(base, fetchUser, (text, guild) => base.spec.fromText(text, guild));
 };
-
-/**
- * A duration in milliseconds, or null for "perm" or "none". Unlike `opt.duration`, prefix mode
- * reads "perm" too, so `-jail @user perm being rude` keeps "perm" out of the reason.
- */
-export const durationOrPermanent = (description: string) =>
-  opt.custom(description, "duration|perm", (text) =>
-    isPermanent(text) || text.trim().toLowerCase() === "none" ? null : parseDuration(text),
-  );

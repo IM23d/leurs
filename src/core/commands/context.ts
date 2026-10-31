@@ -40,8 +40,11 @@ export interface CommandContext {
   readonly commands: readonly Command[];
   /** The first call replies, later calls send follow-ups. Returns the sent message. */
   reply(reply: Reply): Promise<Message>;
-  /** Shows a thinking or typing state for slow work. */
-  defer(): Promise<void>;
+  /**
+   * Shows a thinking or typing state for slow work. Pass `private: true` when the reply will be
+   * private, because a slash reply cannot become private after a public defer.
+   */
+  defer(options?: { private?: boolean }): Promise<void>;
   /** Prefix only: the message this command replied to, if any. */
   referencedMessage(): Promise<Message | undefined>;
 }

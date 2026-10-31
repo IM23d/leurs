@@ -3,6 +3,8 @@ const UNIT_NAMES = { s: "second", m: "minute", h: "hour", d: "day", w: "week" } 
 type Unit = keyof typeof UNITS;
 
 const PART = /(\d+)\s*([smhdw])/gi;
+/** Longer durations are almost certainly typos and do not fit in a Date. */
+const MAX_DURATION_MS = 10 * 365 * UNITS.d;
 
 /** Parses "30m", "1h30m" or "2d 4h" into milliseconds. Returns undefined for anything else. */
 export function parseDuration(input: string): number | undefined {
@@ -11,11 +13,11 @@ export function parseDuration(input: string): number | undefined {
   const total = [...text.matchAll(PART)]
     .map(([, amount, unit]) => Number(amount) * UNITS[unit as Unit])
     .reduce((sum, ms) => sum + ms, 0);
-  return total > 0 ? total : undefined;
+  return total > 0 && total <= MAX_DURATION_MS ? total : undefined;
 }
 
 export function isPermanent(input: string): boolean {
-  return ["perm", "permanent", "forever"].includes(input.trim().toLowerCase());
+  return ["perm", "permanent", "forever", "none"].includes(input.trim().toLowerCase());
 }
 
 /** Formats milliseconds as "2 days, 3 hours". Drops parts that are zero. */

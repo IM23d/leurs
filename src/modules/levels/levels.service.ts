@@ -1,6 +1,7 @@
 import { inArray, sql } from "drizzle-orm";
 
 import { db } from "#db/client.ts";
+import { chunks } from "#shared/lib/chunks.ts";
 
 import { BASE_MESSAGE_XP, levelForXp } from "./levels.math.ts";
 import { levels } from "./levels.schema.ts";
@@ -35,12 +36,9 @@ export function addPending(userId: string, gain: Partial<Counters>): void {
 }
 
 function storedCounters(userIds: readonly string[]): Map<string, Counters> {
-  if (userIds.length === 0) return new Map();
-  const rows = db()
-    .select()
-    .from(levels)
-    .where(inArray(levels.userId, [...userIds]))
-    .all();
+  const rows = chunks(userIds).flatMap((ids) =>
+    db().select().from(levels).where(inArray(levels.userId, ids)).all(),
+  );
   return new Map(rows.map(({ userId, ...counters }) => [userId, counters]));
 }
 

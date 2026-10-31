@@ -1,6 +1,7 @@
 import { time, TimestampStyles, type EmbedBuilder, type User } from "discord.js";
 
 import type { ImageUsage } from "#modules/images/api.ts";
+import { truncate } from "#shared/lib/text.ts";
 import { embed } from "#shared/ui/embeds.ts";
 
 import type { AiUsage } from "./ai.service.ts";
@@ -12,9 +13,8 @@ import type { Translation } from "./translation.ts";
 const DESCRIPTION_LIMIT = 4096;
 const FIELD_LIMIT = 1024;
 const PROMPT_PREVIEW = 100;
-
-const truncate = (text: string, max: number) =>
-  text.length > max ? `${text.slice(0, max - 1)}…` : text;
+// The model names the source language, so cap it to keep the title under 256 characters.
+const LANGUAGE_NAME_LIMIT = 100;
 
 /** One embed per chunk, so long answers arrive as several messages. */
 export function answerEmbeds(answer: string, prompt: string): EmbedBuilder[] {
@@ -35,7 +35,7 @@ export function translationEmbed(
   author?: User,
 ): EmbedBuilder {
   const built = embed(truncate(translation.text || "(empty)", DESCRIPTION_LIMIT))
-    .setTitle(`${translation.source} → ${target.name}`)
+    .setTitle(`${truncate(translation.source, LANGUAGE_NAME_LIMIT)} → ${target.name}`)
     .addFields({ name: "Original", value: truncate(original, FIELD_LIMIT) });
   return author
     ? built.setAuthor({ name: author.displayName, iconURL: author.displayAvatarURL() })

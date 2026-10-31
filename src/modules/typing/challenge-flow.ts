@@ -9,7 +9,7 @@ import {
 
 import type { CommandContext } from "#core/commands/context.ts";
 
-import { CHALLENGE_LIFETIME_MS, typingStore, type Challenge } from "./challenges.service.ts";
+import { challengeDeadline, typingStore, type Challenge } from "./challenges.service.ts";
 import { renderWords } from "./typing-image.ts";
 import { challengeTestEmbed } from "./typing.views.ts";
 
@@ -29,6 +29,7 @@ export async function runChallenge(
   channel: GuildTextBasedChannel,
   challenge: Challenge,
 ): Promise<void> {
+  scheduleExpiry(channel.client, challenge);
   const countdown = await channel.send(`Starting in ${COUNTDOWN_SECONDS}...`);
   for (let second = COUNTDOWN_SECONDS - 1; second > 0; second -= 1) {
     await sleep(1000);
@@ -57,16 +58,22 @@ export async function runChallenge(
   );
 }
 
-/** Drops the challenge after ten minutes unless both players finished. */
+/**
+ * Drops the challenge at its deadline unless both players finished. Called when the challenge
+ * is sent and again when it is accepted, because accepting moves the deadline.
+ */
 export function scheduleExpiry(client: Client, challenge: Challenge): void {
-  setTimeout(() => {
-    if (!typingStore.expire(challenge.id)) return;
-    const channel = client.channels.cache.get(challenge.channelId);
-    if (!channel?.isSendable()) return;
-    void channel
-      .send(
-        `⏰ The typing challenge between ${userMention(challenge.challengerId)} and ${userMention(challenge.challengedId)} has expired.`,
-      )
-      .catch(() => undefined);
-  }, CHALLENGE_LIFETIME_MS).unref();
+  setTimeout(
+    () => {
+      if (!typingStore.expire(challenge.id, Date.now())) return;
+      const channel = client.channels.cache.get(challenge.channelId);
+      if (!channel?.isSendable()) return;
+      void channel
+        .send(
+          `⏰ The typing challenge between ${userMention(challenge.challengerId)} and ${userMention(challenge.challengedId)} has expired.`,
+        )
+        .catch(() => undefined);
+    },
+    challengeDeadline(challenge) - Date.now(),
+  ).unref();
 }

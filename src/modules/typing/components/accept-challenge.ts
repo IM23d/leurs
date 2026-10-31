@@ -10,7 +10,7 @@ export const acceptChallengeComponent = defineComponent({
   id: "typing-accept",
   run: async (interaction, [id = ""]) => {
     if (!interaction.isButton() || !interaction.channel) return;
-    const challenge = typingStore.accept(interaction.user.id, id, Date.now());
+    const challenge = typingStore.accept(interaction.user.id, id, interaction.guildId, Date.now());
     await interaction.update({ components: [] });
     await interaction.followUp({ embeds: [acceptedEmbed(challenge)] });
     await runChallenge(interaction.channel, challenge);

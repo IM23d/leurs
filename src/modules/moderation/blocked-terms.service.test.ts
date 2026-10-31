@@ -66,6 +66,11 @@ describe("matchTerm", () => {
     expect(matchTerm("bad word", [advanced])).toBeUndefined();
   });
 
+  it("skips advanced terms made only of digits or symbols", () => {
+    expect(matchTerm("hello there", [term("1337", true), term("?!", true)])).toBeUndefined();
+    expect(matchTerm("I am 1337", [term("1337", false)])).toBeDefined();
+  });
+
   it("returns the first term that matches", () => {
     const first = { ...term("one", false), id: 1 };
     const second = { ...term("two", false), id: 2 };
@@ -108,5 +113,11 @@ describe("blocked terms", () => {
 
   it("rejects an empty term", () => {
     expect(() => blockTerm({ ...input, term: "   " })).toThrow(UserError);
+  });
+
+  it("rejects advanced terms made only of digits or symbols", () => {
+    expect(() => blockTerm({ ...input, term: "1337", advanced: true })).toThrow(UserError);
+    expect(() => blockTerm({ ...input, term: "!!!", advanced: true })).toThrow(UserError);
+    expect(blockTerm({ ...input, term: "1337" }).term).toBe("1337");
   });
 });

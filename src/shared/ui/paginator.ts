@@ -42,7 +42,10 @@ interface Rendered {
 export interface Paginator {
   readonly component: Component;
   /** Sends page `page` with previous and next buttons that only the caller can use. */
-  reply(ctx: CommandContext, options?: { page?: number; args?: readonly string[] }): Promise<void>;
+  reply(
+    ctx: CommandContext,
+    options?: { page?: number; args?: readonly string[]; private?: boolean },
+  ): Promise<void>;
 }
 
 /**
@@ -86,14 +89,17 @@ export function definePaginator(definition: {
         });
         return;
       }
-      await interaction.update(await view(interaction.guild, Number(page), ownerId, args));
+      // Rendering can be slow, and Discord only waits three seconds for an answer.
+      await interaction.deferUpdate();
+      await interaction.editReply(await view(interaction.guild, Number(page), ownerId, args));
     },
   });
 
   return {
     component,
-    reply: async (ctx, { page = 1, args = [] } = {}) => {
-      await ctx.reply(await view(ctx.guild, page, ctx.user.id, args));
+    reply: async (ctx, { page = 1, args = [], private: isPrivate = false } = {}) => {
+      await ctx.defer({ private: isPrivate });
+      await ctx.reply({ ...(await view(ctx.guild, page, ctx.user.id, args)), private: isPrivate });
     },
   };
 }

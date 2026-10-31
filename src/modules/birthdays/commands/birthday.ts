@@ -1,14 +1,12 @@
-import type { Guild } from "discord.js";
-
 import { defineCommand, subcommand } from "#core/commands/define.ts";
 import { opt } from "#core/commands/options.ts";
 import { UserError } from "#core/errors.ts";
+import { memberIds } from "#shared/lib/members.ts";
 import { embed, successEmbed } from "#shared/ui/embeds.ts";
 import { definePaginator, paginate } from "#shared/ui/paginator.ts";
 
 import { FORMAT_HINT, parseBirthday } from "../birthday-dates.ts";
 import {
-  birthdayUserIds,
   getBirthday,
   setBirthday,
   todayFor,
@@ -18,21 +16,11 @@ import {
 import { birthdayText, listLine } from "../birthdays.views.ts";
 
 const PAGE_SIZE = 10;
-// Discord returns at most 100 members per lookup by ID.
-const MEMBER_BATCH = 100;
-
-async function memberIds(guild: Guild, userIds: readonly string[]): Promise<Set<string>> {
-  const batches = Array.from({ length: Math.ceil(userIds.length / MEMBER_BATCH) }, (_, index) =>
-    userIds.slice(index * MEMBER_BATCH, (index + 1) * MEMBER_BATCH),
-  );
-  const found = await Promise.all(batches.map((user) => guild.members.fetch({ user })));
-  return new Set(found.flatMap((members) => [...members.keys()]));
-}
 
 export const birthdayList = definePaginator({
   id: "birthdays-page",
   render: async ({ guild, page }) => {
-    const upcoming = upcomingBirthdays(await memberIds(guild, birthdayUserIds()));
+    const upcoming = upcomingBirthdays(await memberIds(guild));
     const current = paginate(upcoming, page, PAGE_SIZE);
     const text =
       current.items.length > 0

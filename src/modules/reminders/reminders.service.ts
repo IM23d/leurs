@@ -21,7 +21,9 @@ interface NewReminder {
 export function setReminder(reminder: NewReminder, now = new Date()): Reminder {
   const { runAt, ...payload } = reminder;
   if (runAt <= now) throw new UserError("That time is in the past.");
-  if (runAt.getTime() - now.getTime() > MAX_AHEAD_MS) {
+  // An Invalid Date fails every comparison above, so it is rejected here with the far-off times.
+  const ahead = runAt.getTime() - now.getTime();
+  if (Number.isNaN(ahead) || ahead > MAX_AHEAD_MS) {
     throw new UserError("Reminders can be at most a year ahead.");
   }
   return { id: reminderTask.schedule(runAt, payload), runAt, reason: payload.reason };

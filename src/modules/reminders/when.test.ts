@@ -54,6 +54,16 @@ describe("parseWhen", () => {
     expect(at(text)).toBe(expected);
   });
 
+  it("checks 29.02 against the year it lands in", () => {
+    const on = (date: string, text: string) =>
+      parseWhen(text, new Date(date), "UTC")?.toISOString();
+    expect(on("2027-03-10T12:00:00Z", "29.02")).toBe("2028-02-29T00:00:00.000Z");
+    expect(on("2027-03-10T12:00:00Z", "29.02:08:30")).toBe("2028-02-29T08:30:00.000Z");
+    expect(on("2028-02-01T12:00:00Z", "29.02")).toBe("2028-02-29T00:00:00.000Z");
+    expect(on("2028-03-10T12:00:00Z", "29.02")).toBeUndefined();
+    expect(on("2028-03-10T12:00:00Z", "29.02:08:30")).toBeUndefined();
+  });
+
   it.each(["", "soon", "25:00", "13pm", "0am", "10:75", "31.02", "15.13", "30.02:10:00", "0m"])(
     "rejects %j",
     (text) => {

@@ -33,10 +33,16 @@ function clockTime(text: string, now: Date, zone: string): Date | undefined {
   return target > now ? target : fromWallClock({ ...today, day: today.day + 1 }, zone);
 }
 
-/** The wall clock in this year, or next year when it has already passed. */
-function nextOccurrence(wall: WallClock, now: Date, zone: string): Date {
-  const target = fromWallClock(wall, zone);
-  return target > now ? target : fromWallClock({ ...wall, year: wall.year + 1 }, zone);
+/**
+ * The day and time in this year, or next year when it has already passed. The date is checked
+ * for the year it lands in, so 29.02 only matches in a leap year.
+ */
+function nextOccurrence(wall: Omit<WallClock, "year">, now: Date, zone: string): Date | undefined {
+  const { year } = wallClock(now, zone);
+  return [year, year + 1]
+    .filter((candidate) => isRealDate(candidate, wall.month, wall.day))
+    .map((candidate) => fromWallClock({ ...wall, year: candidate }, zone))
+    .find((target) => target > now);
 }
 
 /** "15.05", "15.05.26" or "15.05.2026": midnight on that day. */
@@ -44,13 +50,12 @@ function calendarDate(text: string, now: Date, zone: string): Date | undefined {
   const match = DATE.exec(text);
   if (!match) return undefined;
   const [day, month] = [Number(match[1]), Number(match[2])];
-  const givenYear = match[3] === undefined ? undefined : Number(match[3]);
-  const year =
-    givenYear === undefined ? wallClock(now, zone).year : givenYear + (givenYear < 100 ? 2000 : 0);
-  if (!isRealDate(year, month, day)) return undefined;
-  const wall = { year, month, day, hour: 0, minute: 0, second: 0 };
+  const midnight = { month, day, hour: 0, minute: 0, second: 0 };
+  if (match[3] === undefined) return nextOccurrence(midnight, now, zone);
   // A date with an explicit year stays put, so a past date is reported as past.
-  return givenYear === undefined ? nextOccurrence(wall, now, zone) : fromWallClock(wall, zone);
+  const givenYear = Number(match[3]);
+  const year = givenYear + (givenYear < 100 ? 2000 : 0);
+  return isRealDate(year, month, day) ? fromWallClock({ ...midnight, year }, zone) : undefined;
 }
 
 /** "15.07:15:25" or "15.07:15:25:00": day.month:hour:minute[:second]. */
@@ -59,9 +64,9 @@ function dateTime(text: string, now: Date, zone: string): Date | undefined {
   if (!match) return undefined;
   const part = (index: number) => Number(match[index] ?? 0);
   const [day, month, hour, minute, second] = [part(1), part(2), part(3), part(4), part(5)];
-  const { year } = wallClock(now, zone);
-  const valid = isRealDate(year, month, day) && isRealTime(hour, minute, second);
-  return valid ? nextOccurrence({ year, month, day, hour, minute, second }, now, zone) : undefined;
+  return isRealTime(hour, minute, second)
+    ? nextOccurrence({ month, day, hour, minute, second }, now, zone)
+    : undefined;
 }
 
 /**

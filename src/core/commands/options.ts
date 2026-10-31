@@ -33,6 +33,8 @@ export interface OptionSpec<TValue> {
   readonly max: number | undefined;
   readonly choices: readonly APIApplicationCommandOptionChoice[] | undefined;
   readonly autocomplete: AutocompleteHandler | undefined;
+  /** Text that means "no value" but still counts as given, such as "perm" for a duration. */
+  readonly isEmpty?: (text: string) => boolean;
   /** Returns undefined when the option was not given. */
   fromSlash(interaction: ChatInputCommandInteraction, name: string): Promise<TValue | undefined>;
   /** Returns undefined when the text is not a valid value. */
@@ -117,8 +119,10 @@ function option<TValue>(
 const nonNull = <T>(value: T | null | undefined): T | undefined => value ?? undefined;
 
 function parseNumber(text: string, integer: boolean): number | undefined {
-  const value = Number(text.replaceAll(/[,_']/g, ""));
-  return !Number.isFinite(value) || (integer && !Number.isInteger(value)) ? undefined : value;
+  const digits = text.replaceAll(/[,_']/g, "");
+  if (!(integer ? /^-?\d+$/ : /^-?\d+(\.\d+)?$/).test(digits)) return undefined;
+  const value = Number(digits);
+  return integer && !Number.isSafeInteger(value) ? undefined : value;
 }
 
 const BOOLEANS: Record<string, boolean> = {
@@ -206,14 +210,14 @@ export const opt = {
    * A duration such as "30m" or "2d", in milliseconds. "perm" and "permanent" read as no value,
    * so make the option optional when permanent is allowed.
    */
-  duration: (description: string) =>
-    option<number>(ApplicationCommandOptionType.String, description, "duration", {
+  duration: (description: string) => {
+    const base = option<number>(ApplicationCommandOptionType.String, description, "duration", {
       fromSlash: (i, name) => {
         const text = i.options.getString(name);
-        return Promise.resolve(
-          text === null || isPermanent(text) ? undefined : parseDuration(text),
-        );
+        return Promise.resolve(text === null ? undefined : parseDuration(text));
       },
       fromText: (text) => Promise.resolve(parseDuration(text)),
-    }),
+    });
+    return new Option<number, true>({ ...base.spec, isEmpty: isPermanent }, true);
+  },
 };

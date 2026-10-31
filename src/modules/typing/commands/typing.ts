@@ -48,6 +48,7 @@ export const typingCommand = defineCommand({
           challengerId: ctx.user.id,
           challengedId: user.id,
           wordCount: words,
+          guildId: ctx.guild.id,
           channelId: ctx.channel.id,
           now: Date.now(),
         });
@@ -63,7 +64,7 @@ export const typingCommand = defineCommand({
       aliases: ["accept"],
       options: { id: opt.string("Challenge ID. Leave empty for the newest").optional() },
       run: async (ctx, { id }) => {
-        const challenge = typingStore.accept(ctx.user.id, id, Date.now());
+        const challenge = typingStore.accept(ctx.user.id, id, ctx.guild.id, Date.now());
         await ctx.reply(acceptedEmbed(challenge));
         await runChallenge(ctx.channel, challenge);
       },
@@ -73,7 +74,7 @@ export const typingCommand = defineCommand({
       aliases: ["mtlist", "mtl", "challenges"],
       run: async (ctx) => {
         const now = Date.now();
-        const challenges = typingStore.pendingFor(ctx.user.id, now);
+        const challenges = typingStore.pendingFor(ctx.user.id, ctx.guild.id, now);
         if (challenges.length === 0) {
           throw new UserError("You don't have any pending typing challenges.");
         }

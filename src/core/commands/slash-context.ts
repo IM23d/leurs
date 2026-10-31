@@ -39,8 +39,9 @@ export function slashContext(
     prefix: "/",
     commands,
     reply: send,
-    defer: async () => {
-      if (!interaction.deferred && !interaction.replied) await interaction.deferReply();
+    defer: async ({ private: isPrivate = false } = {}) => {
+      if (interaction.deferred || interaction.replied) return;
+      await interaction.deferReply(isPrivate ? { flags: MessageFlags.Ephemeral } : {});
     },
     referencedMessage: () => Promise.resolve(undefined),
   };

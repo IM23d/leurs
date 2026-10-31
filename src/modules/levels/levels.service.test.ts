@@ -2,7 +2,12 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { useTestDb } from "#test/helpers/db.ts";
 
-import { flushActivity, recordMessage, setVoiceActive } from "./activity.service.ts";
+import {
+  flushActivity,
+  recordMessage,
+  setVoiceActive,
+  syncVoiceSessions,
+} from "./activity.service.ts";
 import { levelForXp, levelProgress, rollMessageXp, XP_PER_LEVEL } from "./levels.math.ts";
 import { levels } from "./levels.schema.ts";
 import { getStats, levelRanking, setMessages, voiceRanking } from "./levels.service.ts";
@@ -76,6 +81,20 @@ describe("flushActivity", () => {
     setVoiceActive("talker", false, 61_000);
     flushActivity(90_000);
     expect(getStats("talker").voiceSeconds).toBe(61);
+  });
+
+  it("ends sessions of users who left voice unseen and starts sessions for new ones", () => {
+    setVoiceActive("stale", true, 0);
+    setVoiceActive("staying", true, 0);
+    syncVoiceSessions(new Set(["staying", "joined"]), 10_000);
+    flushActivity(20_000);
+    expect(getStats("stale").voiceSeconds).toBe(10);
+    expect(getStats("staying").voiceSeconds).toBe(20);
+    expect(getStats("joined").voiceSeconds).toBe(10);
+    syncVoiceSessions(new Set(), 20_000);
+    flushActivity(60_000);
+    expect(getStats("staying").voiceSeconds).toBe(20);
+    expect(getStats("joined").voiceSeconds).toBe(10);
   });
 
   it("lets setMessages replace pending message XP", () => {

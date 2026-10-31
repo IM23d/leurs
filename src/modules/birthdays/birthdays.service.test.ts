@@ -4,7 +4,6 @@ import { setZone } from "#modules/timezones/timezones.service.ts";
 import { useTestDb } from "#test/helpers/db.ts";
 
 import {
-  birthdayUserIds,
   getBirthday,
   setBirthday,
   upcomingBirthday,
@@ -21,7 +20,6 @@ describe("birthdays", () => {
     setBirthday("1", { year: 2000, month: 1, day: 2 });
     setBirthday("1", { year: 2001, month: 3, day: 4 });
     expect(getBirthday("1")).toEqual({ year: 2001, month: 3, day: 4 });
-    expect(birthdayUserIds()).toEqual(["1"]);
   });
 
   it("puts the next birthday at midnight in the user's zone", () => {

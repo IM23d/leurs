@@ -8,6 +8,8 @@ import type { DeletedMessage } from "./snipes.ts";
 const MAX_FIELD_LENGTH = 1024;
 // Discord allows 10 embeds per message, and the snipe itself takes one.
 const MAX_ORIGINAL_EMBEDS = 9;
+// Discord rejects a message whose embeds hold more than 6000 characters in total.
+const MAX_TOTAL_LENGTH = 6000;
 
 function snipeEmbed({ message, deletedAt }: Snipe<DeletedMessage>): EmbedBuilder {
   const built = embed(message.content === "" ? undefined : message.content)
@@ -23,10 +25,16 @@ function snipeEmbed({ message, deletedAt }: Snipe<DeletedMessage>): EmbedBuilder
   return built.addFields({ name: "Attachments", value: list.slice(0, MAX_FIELD_LENGTH) });
 }
 
-/** The snipe embed followed by the deleted message's own embeds. */
-export const snipeEmbeds = (snipe: Snipe<DeletedMessage>): EmbedBuilder[] => [
-  snipeEmbed(snipe),
-  ...snipe.message.embeds
-    .slice(0, MAX_ORIGINAL_EMBEDS)
-    .map((original) => EmbedBuilder.from(original)),
-];
+/** The snipe embed followed by as many of the deleted message's own embeds as fit. */
+export function snipeEmbeds(snipe: Snipe<DeletedMessage>): EmbedBuilder[] {
+  const first = snipeEmbed(snipe);
+  const embeds = [first];
+  let total = first.length;
+  for (const original of snipe.message.embeds.slice(0, MAX_ORIGINAL_EMBEDS)) {
+    const copy = EmbedBuilder.from(original);
+    if (total + copy.length > MAX_TOTAL_LENGTH) break;
+    embeds.push(copy);
+    total += copy.length;
+  }
+  return embeds;
+}

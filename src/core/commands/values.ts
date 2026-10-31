@@ -44,7 +44,9 @@ export async function slashValues(
   const entries = await Promise.all(
     Object.entries(options).map(async ([name, option]) => {
       const value = await option.spec.fromSlash(interaction, name);
-      if (value === undefined && interaction.options.get(name) !== null) {
+      const given = interaction.options.get(name)?.value;
+      const empty = typeof given === "string" && option.spec.isEmpty?.(given) === true;
+      if (value === undefined && given !== undefined && !empty) {
         throw new ArgumentError(`\`${name}\` is not a valid ${option.spec.placeholder}.`);
       }
       return [name, finish(name, option, value)] as const;
@@ -71,6 +73,11 @@ export async function prefixValues(
     if (token && option.spec.rest) {
       value = await option.spec.fromText(text.slice(token.start).trim(), guild);
       index = tokens.length;
+    } else if (token && option.spec.isEmpty?.(token.value)) {
+      index += 1;
+      if (option.required) throw new ArgumentError(`\`${name}\` is required here.`);
+      values[name] = undefined;
+      continue;
     } else if (token) {
       value = await option.spec.fromText(token.value, guild);
       if (value !== undefined) index += 1;

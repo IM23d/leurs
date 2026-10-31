@@ -4,6 +4,7 @@ import { defineCommand, subcommand } from "#core/commands/define.ts";
 import { opt } from "#core/commands/options.ts";
 import { UserError } from "#core/errors.ts";
 import { zoneFor } from "#modules/timezones/api.ts";
+import { truncate } from "#shared/lib/text.ts";
 import { embed, successEmbed } from "#shared/ui/embeds.ts";
 import { definePaginator, paginate } from "#shared/ui/paginator.ts";
 
@@ -12,6 +13,8 @@ import { parseWhen, WHEN_FORMATS } from "../when.ts";
 
 const PAGE_SIZE = 10;
 const MAX_REASON_LENGTH = 1000;
+// Ten full-length reasons would pass the 4096-character embed description limit.
+const LISTED_REASON_LENGTH = 200;
 
 const timestamp = (date: Date, style: "F" | "R") =>
   time(date, style === "F" ? TimestampStyles.FullDateShortTime : TimestampStyles.RelativeTime);
@@ -23,7 +26,7 @@ export const reminderList = definePaginator({
     const current = paginate(reminders, page, PAGE_SIZE);
     const lines = current.items.map(
       ({ id, runAt, reason }) =>
-        `**#${id}** ${timestamp(runAt, "F")} (${timestamp(runAt, "R")})\n${reason}`,
+        `**#${id}** ${timestamp(runAt, "F")} (${timestamp(runAt, "R")})\n${truncate(reason, LISTED_REASON_LENGTH)}`,
     );
     return {
       embed: embed(lines.length > 0 ? lines.join("\n\n") : "You don't have any reminders.")
@@ -71,7 +74,8 @@ export const remindCommand = defineCommand({
       description: "List your reminders",
       aliases: ["reminders"],
       run: async (ctx) => {
-        await reminderList.reply(ctx, { args: [ctx.user.id] });
+        // The list shows reminders set in other servers too, so only the owner sees it.
+        await reminderList.reply(ctx, { args: [ctx.user.id], private: true });
       },
     }),
     cancel: subcommand({

@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "76128fc1-7c21-4105-8b37-f93f9c65ac9d",
+  "id": "d5d63e9e-353e-47cf-b865-555a51fda141",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "cooldowns": {
@@ -707,13 +707,6 @@
         },
         "levelUpChannelId": {
           "name": "levelUpChannelId",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "birthdayChannelId": {
-          "name": "birthdayChannelId",
           "type": "text",
           "primaryKey": false,
           "notNull": false,

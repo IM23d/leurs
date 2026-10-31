@@ -47,20 +47,19 @@ export async function startBot(config: Config): Promise<() => Promise<void>> {
     else client.on(event.name, listener);
   }
 
-  let stopScheduler: () => void = () => {
-    // Replaced once the client is ready.
-  };
+  let stopScheduler: () => Promise<void> = () => Promise.resolve();
   client.once(Events.ClientReady, (ready) => {
     stopScheduler = startScheduler(ready, registry.tasks);
     logger.info({ user: ready.user.tag, guilds: ready.guilds.cache.size }, "Bot is ready");
   });
 
   await client.login(config.DISCORD_TOKEN);
+  // Stop taking new work first, then let modules write what they buffered.
   return async () => {
-    stopScheduler();
+    await stopScheduler();
+    await client.destroy();
     for (const hook of registry.shutdownHooks) {
       await Promise.resolve(hook()).catch(logFailure("Shutdown hook failed"));
     }
-    await client.destroy();
   };
 }

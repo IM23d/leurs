@@ -1,5 +1,6 @@
 import { time, TimestampStyles, type EmbedBuilder, type User } from "discord.js";
 
+import { joinWithin } from "#shared/lib/text.ts";
 import { embed } from "#shared/ui/embeds.ts";
 
 import { musicUrl, type Plays, type Profile, type Recent, type Track } from "./lastfm-data.ts";
@@ -62,16 +63,25 @@ export function nowPlayingEmbed(
 }
 
 const MAX_LISTED = 15;
+const SEPARATOR = "\n\n";
 
 export function serverEmbed(listeners: readonly Listener[], linked: number): EmbedBuilder {
-  const hidden = listeners.length - MAX_LISTED;
   const summary =
     listeners.length === 0
       ? `Nobody is listening right now. Members with Last.fm: ${linked}`
       : `Listening: ${listeners.length} of ${linked} members with Last.fm`;
-  const lines = listeners
-    .slice(0, MAX_LISTED)
-    .map(({ username, track }) => `[${username}](${profileUrl(username)})\n${trackLine(track)}`);
-  const more = hidden > 0 ? [`And ${hidden} more.`] : [];
-  return embed([...lines, ...more, summary].join("\n\n")).setTitle("Playing in this server");
+  const listed = joinWithin(
+    listeners.map(
+      ({ username, track }) => `[${username}](${profileUrl(username)})\n${trackLine(track)}`,
+    ),
+    {
+      separator: SEPARATOR,
+      reserve: SEPARATOR.length + summary.length,
+      max: MAX_LISTED,
+      more: (hidden) => `And ${hidden} more.`,
+    },
+  );
+  return embed([listed, summary].filter(Boolean).join(SEPARATOR)).setTitle(
+    "Playing in this server",
+  );
 }

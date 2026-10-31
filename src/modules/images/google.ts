@@ -51,12 +51,14 @@ export const isImageSearchConfigured = (): boolean => {
 /** Throws when the Google keys are missing, so commands fail before doing any work. */
 export const requireImageSearch = (): void => void keys();
 
-export async function fetchGoogleImages(query: string): Promise<ImageResult[]> {
+/** `safe` turns on Google SafeSearch. Commands pass false only in NSFW channels. */
+export async function fetchGoogleImages(query: string, safe: boolean): Promise<ImageResult[]> {
   const params = new URLSearchParams({
     ...keys(),
     q: query,
     searchType: "image",
     num: String(RESULTS),
+    ...(safe ? { safe: "active" } : {}),
   });
   const response = await fetch(`${SEARCH_URL}?${params.toString()}`, {
     signal: AbortSignal.timeout(TIMEOUT_MS),

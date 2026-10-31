@@ -1,3 +1,4 @@
+import { memberIds } from "#shared/lib/members.ts";
 import { embed } from "#shared/ui/embeds.ts";
 import { definePaginator, paginate } from "#shared/ui/paginator.ts";
 
@@ -11,8 +12,7 @@ export const leaderboardPages = definePaginator({
   id: "leaderboard",
   render: async ({ guild, page, args: [name = "levels"] }) => {
     const board = boards[isBoardName(name) ? name : "levels"];
-    const members = await guild.members.fetch();
-    const ranked = board.rank([...members.keys()]);
+    const ranked = board.rank([...(await memberIds(guild))]);
     const current = paginate(ranked, page, PAGE_SIZE);
     const lines = current.items.map(([userId, value], index) => {
       const position = current.offset + index;

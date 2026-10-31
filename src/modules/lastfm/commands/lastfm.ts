@@ -1,6 +1,8 @@
 import { defineCommand, subcommand } from "#core/commands/define.ts";
 import { opt } from "#core/commands/options.ts";
 import { UserError } from "#core/errors.ts";
+import { memberIds } from "#shared/lib/members.ts";
+import { settleLimited } from "#shared/lib/settle-limited.ts";
 import { successEmbed } from "#shared/ui/embeds.ts";
 
 import { fetchProfile, fetchRecent, requireLastfm } from "../lastfm-client.ts";
@@ -9,6 +11,7 @@ import { profileEmbed, serverEmbed, type Listener } from "../lastfm.views.ts";
 import { linkedUsername } from "../linked-username.ts";
 
 const MAX_USERNAME_LENGTH = 15;
+const MAX_PARALLEL_REQUESTS = 4;
 
 export const lastfmCommand = defineCommand({
   name: "lastfm",
@@ -56,10 +59,15 @@ export const lastfmCommand = defineCommand({
       run: async (ctx) => {
         requireLastfm();
         await ctx.defer();
-        const members = await ctx.guild.members.fetch();
+        const members = await memberIds(ctx.guild);
         const accounts = allAccounts().filter((account) => members.has(account.userId));
-        const results = await Promise.allSettled(
-          accounts.map(async ({ username }) => ({ username, recent: await fetchRecent(username) })),
+        const results = await settleLimited(
+          accounts,
+          MAX_PARALLEL_REQUESTS,
+          async ({ username }) => ({
+            username,
+            recent: await fetchRecent(username),
+          }),
         );
         const listeners = results
           .flatMap((result) => (result.status === "fulfilled" ? [result.value] : []))

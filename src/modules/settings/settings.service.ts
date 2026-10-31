@@ -9,7 +9,7 @@ export const MAX_PREFIX_LENGTH = 3;
 
 export type ChannelSetting = keyof Pick<
   GuildSettings,
-  "modLogChannelId" | "blockedTermsLogChannelId" | "levelUpChannelId" | "birthdayChannelId"
+  "modLogChannelId" | "blockedTermsLogChannelId" | "levelUpChannelId"
 >;
 export type RoleSetting = keyof Pick<GuildSettings, "jailRoleId">;
 
@@ -21,7 +21,6 @@ const defaults = (guildId: string): GuildSettings => ({
   modLogChannelId: null,
   blockedTermsLogChannelId: null,
   levelUpChannelId: null,
-  birthdayChannelId: null,
   jailRoleId: null,
 });
 
