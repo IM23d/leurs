@@ -1,5 +1,6 @@
 import type { Message } from "discord.js";
 
+import { findHelpTarget, helpFor, stripHelpFlag } from "../commands/help.ts";
 import { prefixContext } from "../commands/prefix-context.ts";
 import { ArgumentError, prefixValues, usage } from "../commands/values.ts";
 import { findPrefixRoute, type Registry } from "../registry.ts";
@@ -28,6 +29,12 @@ export async function handleMessage(
   const prefix = options.getPrefix(message.guildId);
   const text = stripPrefix(message.content, prefix, message.client.user.id);
   if (text === undefined || /^\s/.test(text)) return;
+  const helpText = stripHelpFlag(text);
+  if (helpText !== undefined) {
+    const target = findHelpTarget(registry.commands, helpText);
+    if (target) await message.reply({ embeds: [helpFor(target, { prefix, textPrefix: prefix })] });
+    return;
+  }
   const found = findPrefixRoute(registry, text);
   if (!found) return;
   const { route, rest } = found;

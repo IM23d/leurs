@@ -98,6 +98,9 @@ export const rankCommand = defineCommand({
   message directly.
 - Throw `UserError` for anything the user did wrong. The dispatcher shows it as a red embed and
   refunds the command's cooldown. Any other error is logged with a reference.
+- Help is generated from the definition. `-<command> --help` shows the command and its
+  subcommands, `-<command> <subcommand> --help` shows usage and every option, and `/help` shows
+  the same. Write `description` texts that read well there.
 - `aliases` are prefix-only. Keep every name the old bot used as an alias.
 - Subcommands use `subcommand()`. A subcommand alias may contain one space, e.g. `"tz set"`.
 - `permissions` takes `PermissionFlagsBits`. `ownerOnly` limits a command to `OWNER_IDS`.
