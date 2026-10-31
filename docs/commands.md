@@ -119,6 +119,13 @@ Every command works as a slash command and with the server's prefix (default `-`
 | `/snipe show`  | Show the last deleted message in this channel   | `-s`                 |
 | `/snipe clear` | Forget the last deleted message in this channel | `-clearsnipe`, `-cs` |
 
+## reaction log
+
+| Command                      | Description                                            | Also works as |
+| ---------------------------- | ------------------------------------------------------ | ------------- |
+| `/reactionhistory [message]` | See who added and removed which reactions on a message | `-rh`         |
+| `/reactionsnipe`             | Show the last reaction someone removed in this channel | `-rs`         |
+
 ## birthdays
 
 | Command                 | Description                            | Also works as |

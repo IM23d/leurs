@@ -2,9 +2,8 @@ import type { Message } from "discord.js";
 
 import type { CommandContext } from "#core/commands/context.ts";
 import { UserError } from "#core/errors.ts";
+import { parseMessageRef, type MessageRef } from "#shared/lib/message-link.ts";
 import { embed } from "#shared/ui/embeds.ts";
-
-import { parseMessageRef, type MessageRef } from "./message-link.ts";
 
 const NOT_FOUND = "I can't find that message. For a message in another channel, use its link.";
 

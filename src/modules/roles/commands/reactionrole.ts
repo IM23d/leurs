@@ -4,10 +4,10 @@ import { defineCommand, subcommand } from "#core/commands/define.ts";
 import { opt } from "#core/commands/options.ts";
 import { UserError } from "#core/errors.ts";
 import { parseEmoji, type ParsedEmoji } from "#shared/lib/emoji.ts";
+import { messageLink, parseMessageRef } from "#shared/lib/message-link.ts";
 import { embed, successEmbed } from "#shared/ui/embeds.ts";
 import { definePaginator, paginate } from "#shared/ui/paginator.ts";
 
-import { messageLink, parseMessageRef } from "../message-link.ts";
 import {
   addReactionRole,
   listReactionRoles,

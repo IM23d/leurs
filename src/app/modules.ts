@@ -12,6 +12,7 @@ import { levelsModule } from "#modules/levels/index.ts";
 import { moderationModule } from "#modules/moderation/index.ts";
 import { profileModule } from "#modules/profile/index.ts";
 import { quoteModule } from "#modules/quote/index.ts";
+import { reactionLogModule } from "#modules/reaction-log/index.ts";
 import { remindersModule } from "#modules/reminders/index.ts";
 import { rolesModule } from "#modules/roles/index.ts";
 import { settingsModule } from "#modules/settings/index.ts";
@@ -37,6 +38,7 @@ export const modules: readonly Module[] = [
   remindersModule,
   afkModule,
   snipeModule,
+  reactionLogModule,
   birthdaysModule,
   timezonesModule,
   profileModule,
