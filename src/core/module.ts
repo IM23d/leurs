@@ -12,6 +12,8 @@ export interface Module {
   readonly components?: readonly Component[];
   readonly events?: readonly EventHandler[];
   readonly tasks?: readonly RunnableTask[];
+  /** Runs before the bot disconnects, e.g. to write buffered data. */
+  readonly onShutdown?: () => void | Promise<void>;
 }
 
 export const defineModule = (module: Module): Module => module;

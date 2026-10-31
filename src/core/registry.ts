@@ -19,6 +19,7 @@ export interface Registry {
   readonly components: ReadonlyMap<string, Component>;
   readonly events: readonly EventHandler[];
   readonly tasks: readonly RunnableTask[];
+  readonly shutdownHooks: readonly (() => void | Promise<void>)[];
   /** Prefix names and aliases, lowercased. Keys may contain one space. */
   readonly prefixRoutes: ReadonlyMap<string, Route>;
 }
@@ -65,6 +66,7 @@ export function buildRegistry(modules: readonly Module[]): Registry {
         "task kind",
       ).values(),
     ],
+    shutdownHooks: modules.flatMap((m) => (m.onShutdown ? [m.onShutdown] : [])),
     prefixRoutes: uniqueMap(commands.flatMap(prefixEntries), "prefix name or alias"),
   };
 }

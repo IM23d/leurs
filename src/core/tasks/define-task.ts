@@ -6,7 +6,7 @@ import { db } from "#db/client.ts";
 
 import { scheduledTasks } from "./tasks.schema.ts";
 
-export interface PendingTask<TPayload> {
+interface PendingTask<TPayload> {
   readonly id: number;
   readonly runAt: Date;
   readonly payload: TPayload;

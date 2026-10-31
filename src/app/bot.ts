@@ -58,6 +58,9 @@ export async function startBot(config: Config): Promise<() => Promise<void>> {
   await client.login(config.DISCORD_TOKEN);
   return async () => {
     stopScheduler();
+    for (const hook of registry.shutdownHooks) {
+      await Promise.resolve(hook()).catch(logFailure("Shutdown hook failed"));
+    }
     await client.destroy();
   };
 }

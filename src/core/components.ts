@@ -3,7 +3,7 @@ import type { MessageComponentInteraction, ModalSubmitInteraction } from "discor
 const SEPARATOR = ":";
 const MAX_CUSTOM_ID_LENGTH = 100;
 
-export type ComponentInteraction =
+type ComponentInteraction =
   MessageComponentInteraction<"cached"> | ModalSubmitInteraction<"cached">;
 
 /**

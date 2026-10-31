@@ -34,9 +34,13 @@ async function replyWithFailure(
     embeds: [failureEmbed(error, context)],
     flags: MessageFlags.Ephemeral,
   } as const;
-  await (interaction.deferred || interaction.replied
-    ? interaction.followUp(payload)
-    : interaction.reply(payload));
+  if (interaction.deferred && !interaction.replied) {
+    await interaction.editReply({ embeds: payload.embeds });
+  } else if (interaction.replied) {
+    await interaction.followUp(payload);
+  } else {
+    await interaction.reply(payload);
+  }
 }
 
 async function chatInput(

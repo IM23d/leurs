@@ -7,13 +7,26 @@ export interface LegacySource {
   read(file: string): unknown;
 }
 
+type Reviver = (key: string, value: unknown, context: { source: string }) => unknown;
+
+/**
+ * Python wrote some Discord IDs as JSON numbers. Above 2^53 they lose digits as a JavaScript
+ * number, so those are kept as their exact source text instead.
+ */
+const keepLargeIntegers: Reviver = (_key, value, context) =>
+  typeof value === "number" && Number.isInteger(value) && !Number.isSafeInteger(value)
+    ? context.source
+    : value;
+
 export function legacySource(directory: string): LegacySource {
   return {
     read: (file) => {
       const path = join(directory, file);
       if (!existsSync(path)) return undefined;
       const text = readFileSync(path, "utf8").trim();
-      return text === "" ? undefined : (JSON.parse(text) as unknown);
+      return text === ""
+        ? undefined
+        : (JSON.parse(text, keepLargeIntegers as Parameters<typeof JSON.parse>[1]) as unknown);
     },
   };
 }

@@ -12,6 +12,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY package.json ./
 COPY src ./src
 COPY drizzle ./drizzle
+COPY assets/fonts ./assets/fonts
 RUN mkdir -p data && chown node:node data
 USER node
 CMD ["node", "src/index.ts"]
