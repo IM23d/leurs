@@ -2,6 +2,7 @@ import type { Module } from "#core/module.ts";
 import { afkModule } from "#modules/afk/index.ts";
 import { aiModule } from "#modules/ai/index.ts";
 import { birthdaysModule } from "#modules/birthdays/index.ts";
+import { clownboardModule } from "#modules/clownboard/index.ts";
 import { economyModule } from "#modules/economy/index.ts";
 import { funModule } from "#modules/fun/index.ts";
 import { generalModule } from "#modules/general/index.ts";
@@ -39,6 +40,7 @@ export const modules: readonly Module[] = [
   afkModule,
   snipeModule,
   reactionLogModule,
+  clownboardModule,
   birthdaysModule,
   timezonesModule,
   profileModule,

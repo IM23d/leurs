@@ -126,6 +126,19 @@ Every command works as a slash command and with the server's prefix (default `-`
 | `/reactionhistory [message]` | See who added and removed which reactions on a message | `-rh`         |
 | `/reactionsnipe`             | Show the last reaction someone removed in this channel | `-rs`         |
 
+## clownboard
+
+| Command                           | Description                                             | Also works as |
+| --------------------------------- | ------------------------------------------------------- | ------------- |
+| `/clownboard view`                | Show the clownboard settings                            | `-cb`         |
+| `/clownboard top`                 | Show who got clowned the most                           |               |
+| `/clownboard channel <channel>`   | Turn the clownboard on and choose its channel           |               |
+| `/clownboard emoji <emoji>`       | Change the emoji that clowns a message                  |               |
+| `/clownboard threshold <count>`   | How many clowns a message needs                         |               |
+| `/clownboard cooldown [duration]` | How long members wait between clowns. Admins never wait |               |
+| `/clownboard remove [message]`    | Take a message off the clownboard                       |               |
+| `/clownboard off`                 | Turn the clownboard off. Past posts stay                |               |
+
 ## birthdays
 
 | Command                 | Description                            | Also works as |
