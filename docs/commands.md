@@ -128,16 +128,18 @@ Every command works as a slash command and with the server's prefix (default `-`
 
 ## clownboard
 
-| Command                           | Description                                             | Also works as |
-| --------------------------------- | ------------------------------------------------------- | ------------- |
-| `/clownboard view`                | Show the clownboard settings                            | `-cb`         |
-| `/clownboard top`                 | Show who got clowned the most                           |               |
-| `/clownboard channel <channel>`   | Turn the clownboard on and choose its channel           |               |
-| `/clownboard emoji <emoji>`       | Change the emoji that clowns a message                  |               |
-| `/clownboard threshold <count>`   | How many clowns a message needs                         |               |
-| `/clownboard cooldown [duration]` | How long members wait between clowns. Admins never wait |               |
-| `/clownboard remove [message]`    | Take a message off the clownboard                       |               |
-| `/clownboard off`                 | Turn the clownboard off. Past posts stay                |               |
+| Command                                  | Description                                                     | Also works as   |
+| ---------------------------------------- | --------------------------------------------------------------- | --------------- |
+| `/clownboard clown [message]`            | Start a clown vote on a message. Reply to it, or give its link  | `-clown`, `-cb` |
+| `/clownboard view`                       | Show the clownboard settings                                    |                 |
+| `/clownboard top`                        | Show who got clowned the most                                   |                 |
+| `/clownboard channel <channel>`          | Turn the clownboard on and choose its channel                   |                 |
+| `/clownboard emoji <emoji>`              | Change the emoji people vote with                               |                 |
+| `/clownboard threshold <count>`          | How many votes a message needs                                  |                 |
+| `/clownboard cooldown [duration]`        | How long members wait between starting votes. Admins never wait |                 |
+| `/clownboard remove [message]`           | Take a message off the clownboard                               |                 |
+| `/clownboard off`                        | Turn the clownboard off. Past posts stay                        |                 |
+| Clown (right-click a message, then Apps) |                                                                 |                 |
 
 ## birthdays
 

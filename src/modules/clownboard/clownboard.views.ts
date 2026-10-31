@@ -55,8 +55,10 @@ export function settingsEmbed(settings: ClownboardSettings | undefined): EmbedBu
     [
       `**Channel:** <#${settings.channelId}>`,
       `**Emoji:** ${settings.emoji}`,
-      `**Needed:** ${settings.threshold} ${settings.threshold === 1 ? "reaction" : "reactions"}`,
-      `**Cooldown:** ${cooldown} between clowns (admins have none)`,
+      `**Votes needed:** ${settings.threshold}`,
+      `**Cooldown:** ${cooldown} between starting votes (admins have none)`,
+      "",
+      `Reply to a message with \`.cb\` to start a vote, then everyone votes with ${settings.emoji}.`,
     ].join("\n"),
   ).setTitle("Clownboard");
 }

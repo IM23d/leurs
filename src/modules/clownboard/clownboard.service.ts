@@ -1,4 +1,4 @@
-import { and, count, desc, eq, or } from "drizzle-orm";
+import { and, count, desc, eq, isNotNull, or } from "drizzle-orm";
 
 import { db } from "#db/client.ts";
 
@@ -14,7 +14,7 @@ export type { ClownboardPost, ClownboardSettings } from "./clownboard.schema.ts"
 export const DEFAULTS = {
   emoji: "🤡",
   emojiKey: "🤡",
-  threshold: 1,
+  threshold: 3,
   cooldownSeconds: 6 * 3600,
 } as const;
 
@@ -59,11 +59,23 @@ export function disableClownboard(guildId: string): boolean {
 export const getPost = (messageId: string): ClownboardPost | undefined =>
   db().select().from(clownboardPosts).where(eq(clownboardPosts.messageId, messageId)).get();
 
+/** Starts a vote. Returns false when the message already has one. */
+export function startVote(vote: Omit<ClownboardPost, "boardMessageId" | "count">): boolean {
+  return (
+    db()
+      .insert(clownboardPosts)
+      .values({ ...vote, boardMessageId: null, count: 0 })
+      .onConflictDoNothing()
+      .run().changes > 0
+  );
+}
+
+/** Stores the latest vote count, and the clownboard message once it is posted. */
 export function savePost(post: ClownboardPost): void {
   db()
-    .insert(clownboardPosts)
-    .values(post)
-    .onConflictDoUpdate({ target: clownboardPosts.messageId, set: { count: post.count } })
+    .update(clownboardPosts)
+    .set({ count: post.count, boardMessageId: post.boardMessageId })
+    .where(eq(clownboardPosts.messageId, post.messageId))
     .run();
 }
 
@@ -91,12 +103,12 @@ export function findPost(guildId: string, messageId: string): ClownboardPost | u
     .get();
 }
 
-/** Members with the most messages on the clownboard. */
+/** Members with the most messages that made it onto the clownboard. */
 export function topClowns(guildId: string, limit: number): { authorId: string; posts: number }[] {
   return db()
     .select({ authorId: clownboardPosts.authorId, posts: count() })
     .from(clownboardPosts)
-    .where(eq(clownboardPosts.guildId, guildId))
+    .where(and(eq(clownboardPosts.guildId, guildId), isNotNull(clownboardPosts.boardMessageId)))
     .groupBy(clownboardPosts.authorId)
     .orderBy(desc(count()), clownboardPosts.authorId)
     .limit(limit)

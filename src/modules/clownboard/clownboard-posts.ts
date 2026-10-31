@@ -1,10 +1,10 @@
 import type { Message, MessageReaction, PartialMessageReaction } from "discord.js";
 
-import { getPost, savePost, type ClownboardSettings } from "./clownboard.service.ts";
+import { savePost, type ClownboardPost, type ClownboardSettings } from "./clownboard.service.ts";
 import { boardMessage, counterLine } from "./clownboard.views.ts";
 
-/** Reactions that count: no bots, and not the author clowning their own message. */
-export async function countClowns(
+/** Votes that count: no bots, and not the author voting on their own message. */
+export async function countVotes(
   reaction: MessageReaction | PartialMessageReaction,
   message: Message,
 ): Promise<number> {
@@ -13,32 +13,27 @@ export async function countClowns(
 }
 
 /**
- * Posts the message to the clownboard once it has enough clowns, or updates the counter on a
- * post that exists. Posts stay up when clowns are taken back.
+ * Posts the message to the clownboard once it has enough votes, or updates the counter on a post
+ * that exists. Posts stay up when votes are taken back.
  */
 export async function refreshPost(
   message: Message<true>,
+  post: ClownboardPost,
   settings: ClownboardSettings,
   count: number,
 ): Promise<void> {
   const board = message.guild.channels.cache.get(settings.channelId);
   if (!board?.isSendable()) return;
-  const post = getPost(message.id);
-  if (post) {
+  if (post.boardMessageId !== null) {
     const sent = await board.messages.fetch(post.boardMessageId).catch(() => undefined);
     await sent?.edit({ content: counterLine(settings.emoji, count, message.channelId) });
     savePost({ ...post, count });
     return;
   }
-  if (count < settings.threshold) return;
+  if (count < settings.threshold) {
+    savePost({ ...post, count });
+    return;
+  }
   const sent = await board.send(boardMessage(message, settings.emoji, count));
-  savePost({
-    messageId: message.id,
-    guildId: message.guildId,
-    channelId: message.channelId,
-    authorId: message.author.id,
-    boardMessageId: sent.id,
-    count,
-    postedAt: new Date(),
-  });
+  savePost({ ...post, count, boardMessageId: sent.id });
 }

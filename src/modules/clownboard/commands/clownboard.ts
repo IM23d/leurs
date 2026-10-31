@@ -19,9 +19,11 @@ import {
   updateClownboard,
 } from "../clownboard.service.ts";
 import { settingsEmbed, topEmbed } from "../clownboard.views.ts";
+import { startClownVote } from "../start-vote.ts";
 
 const ADMIN = PermissionFlagsBits.Administrator;
 const TOP_SIZE = 10;
+const VOTE_NOTICE_SECONDS = 10;
 
 /** Applies a settings change, or explains that the clownboard is off. */
 function change(guildId: string, changes: Parameters<typeof updateClownboard>[1]) {
@@ -32,10 +34,37 @@ function change(guildId: string, changes: Parameters<typeof updateClownboard>[1]
 
 export const clownboardCommand = defineCommand({
   name: "clownboard",
-  description: "Repost the worst messages: react with the clown emoji",
+  description: "Vote messages onto the clownboard",
   aliases: ["cb"],
-  defaultSubcommand: "view",
+  defaultSubcommand: "clown",
   subcommands: {
+    clown: subcommand({
+      description: "Start a clown vote on a message. Reply to it, or give its link",
+      aliases: ["clown"],
+      options: {
+        message: opt
+          .custom(
+            "A message link or ID. With the prefix you can reply to it instead",
+            "message link",
+            parseMessageRef,
+          )
+          .optional(),
+      },
+      run: async (ctx, { message }) => {
+        const target = message
+          ? await ctx.channel.messages.fetch(message.messageId).catch(() => undefined)
+          : await ctx.referencedMessage();
+        if (!target?.inGuild()) {
+          if (message) throw new UserError("I can't find that message in this channel.");
+          await ctx.reply(settingsEmbed(getClownboard(ctx.guild.id)));
+          return;
+        }
+        await ctx.reply({
+          embeds: [successEmbed(await startClownVote(ctx.member, target))],
+          deleteAfter: VOTE_NOTICE_SECONDS,
+        });
+      },
+    }),
     view: subcommand({
       description: "Show the clownboard settings",
       run: async (ctx) => {
@@ -60,7 +89,7 @@ export const clownboardCommand = defineCommand({
       },
     }),
     emoji: subcommand({
-      description: "Change the emoji that clowns a message",
+      description: "Change the emoji people vote with",
       permissions: ADMIN,
       options: { emoji: opt.custom("An emoji, e.g. 🤡", "emoji", parseEmoji) },
       run: async (ctx, { emoji }) => {
@@ -69,7 +98,7 @@ export const clownboardCommand = defineCommand({
       },
     }),
     threshold: subcommand({
-      description: "How many clowns a message needs",
+      description: "How many votes a message needs",
       permissions: ADMIN,
       options: { count: opt.integer("Reactions needed").min(1).max(50) },
       run: async (ctx, { count }) => {
@@ -78,7 +107,7 @@ export const clownboardCommand = defineCommand({
       },
     }),
     cooldown: subcommand({
-      description: "How long members wait between clowns. Admins never wait",
+      description: "How long members wait between starting votes. Admins never wait",
       permissions: ADMIN,
       options: {
         duration: opt.duration("e.g. 6h. Leave empty or write none for no cooldown").optional(),
@@ -88,8 +117,8 @@ export const clownboardCommand = defineCommand({
         await ctx.reply(
           successEmbed(
             duration
-              ? `Members can clown once every ${formatDuration(duration)}.`
-              : "Members can clown without waiting.",
+              ? `Members can start a clown vote once every ${formatDuration(duration)}.`
+              : "Members can start clown votes without waiting.",
           ),
         );
       },
@@ -113,7 +142,7 @@ export const clownboardCommand = defineCommand({
         removePost(post.messageId);
         const board = getClownboard(ctx.guild.id);
         const channel = board ? ctx.guild.channels.cache.get(board.channelId) : undefined;
-        if (channel?.isTextBased()) {
+        if (channel?.isTextBased() && post.boardMessageId !== null) {
           await channel.messages.delete(post.boardMessageId).catch(() => undefined);
         }
         await ctx.reply(successEmbed("Taken off the clownboard."));
