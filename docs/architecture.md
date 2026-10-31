@@ -122,6 +122,8 @@ export const rankCommand = defineCommand({
 - Component state lives in the custom ID (`customId(component, ...args)`), so buttons keep
   working after a restart.
 - `private: true` makes a slash reply ephemeral. A prefix reply deletes itself after 15 seconds.
+- A command that calls `ctx.defer()` and then replies privately must call
+  `ctx.defer({ private: true })`, because a slash reply cannot become private after a public defer.
 
 ## Database
 
@@ -133,6 +135,10 @@ export const rankCommand = defineCommand({
 - Store Discord IDs as `text`. Store times with `integer({ mode: "timestamp_ms" })`.
 - Do work that has to stay consistent, such as moving money, in one statement or one
   `db().transaction()`.
+- `.returning().get()` is typed as always returning a row, but returns `undefined` when an
+  `UPDATE` or `DELETE` matched nothing. Use `.returning().all().at(0)` there.
+- Pass long ID lists to `inArray` in `chunks()` from `#shared/lib/chunks.ts`. SQLite allows at
+  most 32766 parameters per statement.
 
 ## Scheduled work
 

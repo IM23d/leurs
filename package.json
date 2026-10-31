@@ -30,7 +30,7 @@
     "db:generate": "drizzle-kit generate",
     "deploy:commands": "node --env-file=.env scripts/deploy-commands.ts",
     "import:json": "node --env-file=.env scripts/import-json/index.ts",
-    "docs:commands": "node scripts/gen-docs.ts",
+    "docs:commands": "node scripts/gen-docs.ts && prettier --write docs/commands.md",
     "prepare": "lefthook install || true",
     "db:check": "drizzle-kit check"
   },

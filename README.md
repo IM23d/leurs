@@ -1,11 +1,10 @@
-# <p align="center">Leurs - Discord Balance Bot</p>
+# <p align="center">leurs</p>
 
 <p align="center">
-  <img src="./assets/leurs-logo-circle.png" width="200" alt="Leurs Discord Bot Logo">
+  <img src="./assets/leurs-logo-circle.png" width="200" alt="leurs logo">
 </p>
 <p align="center">
-  <strong>A feature-rich Discord bot designed to enhance your server experience.</strong>
-  Complete with economy, moderation, music integration, and utility commands.
+  <strong>A Discord bot with levels, economy, moderation and utility commands.</strong>
 </p>
 <p align="center">
   <a href="https://github.com/IM23d/leurs"><img src="https://badgetrack.pianonic.ch/badge?tag=leurs-discord-bot&label=visits&color=d97706&style=flat" alt="visits" /></a>
@@ -14,113 +13,91 @@
   <a href="https://github.com/IM23d/leurs/releases"><img src="https://img.shields.io/github/v/release/IM23d/leurs?include_prereleases&color=d97706&label=Latest%20Release"/></a>
 </p>
 
----
+## Features
 
-## 🚀 Features
+- **Levels:** XP for messages and time in voice, ranks and leaderboards.
+- **Economy:** coins, daily begging, jobs that pay out once a day, and coin-flip gambling.
+- **Moderation:** warnings, bans, kicks, timeouts, jail, purge, blocked terms with automatic
+  punishments, and a moderation log.
+- **Roles:** temporary roles, reaction roles, and roles restored when a member rejoins.
+- **Utility:** reminders, AFK, snipe, birthdays, timezones, weather, avatars, quote images and
+  typing tests.
+- **Integrations:** Last.fm now playing, AI answers and translation through DeepSeek, and Google
+  image search.
 
-- **💰 Economy System**: Virtual currency, gambling, jobs, and daily rewards
-- **🛡️ Advanced Moderation**: Comprehensive user management with warnings and role automation
-- **🎵 Last.fm Integration**: Real-time music tracking and server-wide now playing
-- **📊 Leveling System**: XP-based progression with leaderboards and rewards
-- **⚙️ Admin Tools**: Custom embeds, reaction roles, and bulk management
-- **🎯 Utilities**: Birthday tracking, timezone management, and quotes
+Every command works as a slash command and with the server's prefix, which defaults to `-`. See
+[docs/commands.md](docs/commands.md) for the full list.
 
-## 📦 Installation
+## Running the bot
 
-### Using Docker (Recommended)
-
-**1. Create your configuration:**
+You need a Discord application with a bot user. In the Developer Portal, turn on the **Server
+Members** and **Message Content** intents.
 
 ```bash
-# Clone the repository
 git clone https://github.com/IM23d/leurs.git
 cd leurs
-
-# Copy and configure environment file
-cp .env.template .env
-# Edit .env with your bot token and API keys
+cp .env.example .env   # then fill in DISCORD_TOKEN and DISCORD_CLIENT_ID
 ```
 
-**2. Create a `compose.yml` file:**
-
-```yaml
-services:
-  leurs:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: leurs-bot
-    env_file:
-      - .env
-    restart: unless-stopped
-```
-
-**3. Start the bot:**
+### With Docker
 
 ```bash
-docker compose up -d
+npm ci                    # only needed once, for the next command
+npm run deploy:commands   # registers the slash commands with Discord
+docker compose up -d --build
 ```
 
-### Manual Installation
+The database lives in `./data/leurs.db`.
+
+### Without Docker
+
+Needs Node.js 24 or newer.
 
 ```bash
-# Clone and setup
-git clone https://github.com/IM23d/leurs.git
-cd leurs
-
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Configure environment
-cp .env.template .env
-# Edit .env with your credentials
-
-# Run the bot
-python main.py
+npm ci
+npm run deploy:commands
+npm start
 ```
 
-## ⚙️ Configuration
+Run `npm run deploy:commands` again whenever a command changes.
 
-Configure your `.env` file with the following:
+## Configuration
 
-```properties
-# Discord bot token (Required)
-DISCORD_TOKEN=your_discord_bot_token
+All settings come from `.env`. See [.env.example](.env.example).
 
-# Last.fm API (Optional - for music features)
-LAST_FM_KEY=your_lastfm_api_key
+| Variable                             | Needed for                                                                          |
+| ------------------------------------ | ----------------------------------------------------------------------------------- |
+| `DISCORD_TOKEN`, `DISCORD_CLIENT_ID` | Always                                                                              |
+| `DEV_GUILD_ID`                       | Optional. Registers commands in one test server only, where changes show up at once |
+| `OWNER_IDS`                          | Owner-only commands such as `/usage`                                                |
+| `LASTFM_API_KEY`                     | Last.fm commands                                                                    |
+| `DEEPSEEK_API_KEY`                   | `/ai` and `/translate`                                                              |
+| `GOOGLE_API_KEY`, `GOOGLE_CSE_ID`    | `/image`                                                                            |
 
-# Google Custom Search API (Optional - for image search)
-GOOGLE_API_KEY=your_google_api_key
-GOOGLE_CSE_ID=your_google_cse_id
+Commands whose key is missing reply that the feature is not configured. Server admins set the
+prefix, log channels and jail role with `/prefix` and `/settings`.
 
-# DeepSeek API (Optional - for AI features)
-DEEPSEEK_API_KEY=your_deepseek_api_key
+## Development
+
+```bash
+npm run dev     # restarts on file changes
+npm run check   # typecheck, lint, format check, tests and unused-code check, same as CI
 ```
 
-## 🎮 Command Categories
+- [docs/architecture.md](docs/architecture.md) explains the folder layout, the rules ESLint
+  enforces, and how to add a command or a module.
+- After changing a `*.schema.ts` file, run `npm run db:generate` and commit the migration.
+- After changing a command, run `npm run docs:commands`.
+- [docs/v2-plan.md](docs/v2-plan.md) lists what changed from the Python bot, which is kept in
+  `legacy/` until v2 replaces it.
 
-| Category       | Examples                       | Description                      |
-| -------------- | ------------------------------ | -------------------------------- |
-| **Economy**    | `-balance`, `-work`, `-gamble` | Manage virtual currency and jobs |
-| **Moderation** | `-warn`, `-ban`, `-mute`       | Keep your server organized       |
-| **Music**      | `-np`, `-lastfm`               | Share what you're listening to   |
-| **Levels**     | `-rank`, `-leveltop`           | Track your server progression    |
-| **Utility**    | `-info`, `-birthday`           | Helpful server tools             |
+## Contributing
 
-For complete command documentation, visit **[docs.leurs.ch](https://docs.leurs.ch)**
+1. Create a branch from `v2` (or `main` after the v2 release).
+2. Make your change and run `npm run check`.
+3. Open a pull request and fill in the checklist.
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## Contributors
 
@@ -164,25 +141,6 @@ For complete command documentation, visit **[docs.leurs.ch](https://docs.leurs.c
   </tr>
 </table>
 
-## 📄 License
+## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## ⭐ Support the Project
-
-If Leurs has enhanced your Discord server experience, please consider:
-
-- ⭐ **Starring this repository** to show your support
-- 🐛 **Reporting bugs** to help us improve
-- 💡 **Suggesting features** for future updates
-- 🤝 **Contributing code** to make Leurs even better
-
-## 🔗 Links
-
-- **Documentation**: [docs.leurs.ch](https://docs.leurs.ch)
-- **Issues**: [GitHub Issues](https://github.com/IM23d/leurs/issues)
-- **Pull Requests**: [GitHub PRs](https://github.com/IM23d/leurs/pulls)
-
----
-
-<p align="center">Made with ❤️ by the <strong>Leurs Team</strong></p>
+MIT. See [LICENSE](LICENSE).
