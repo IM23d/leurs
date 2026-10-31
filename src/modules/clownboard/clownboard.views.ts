@@ -58,7 +58,7 @@ export function settingsEmbed(settings: ClownboardSettings | undefined): EmbedBu
       `**Votes needed:** ${settings.threshold}`,
       `**Cooldown:** ${cooldown} between starting votes (admins have none)`,
       "",
-      `Reply to a message with \`.cb\` to start a vote, then everyone votes with ${settings.emoji}.`,
+      `React with ${settings.emoji} to vote, or reply to a message with \`.cb\` to start a vote.`,
     ].join("\n"),
   ).setTitle("Clownboard");
 }
