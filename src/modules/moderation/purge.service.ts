@@ -4,7 +4,7 @@ import { parseDuration } from "#shared/lib/duration.ts";
 export const BULK_DELETE_MAX_AGE_MS = 14 * 86_400_000;
 export const MAX_PURGE = 100;
 /** A time-based purge stops after this many messages, so a typo cannot run for minutes. */
-export const MAX_TIME_PURGE = 1000;
+const MAX_TIME_PURGE = 1000;
 
 /** What to delete: a number of messages, or everything from the last `ms` milliseconds. */
 export type PurgeTarget =
@@ -59,4 +59,50 @@ export function planPurge(
     now - message.createdAt.getTime() < BULK_DELETE_MAX_AGE_MS;
   const deletable = matching.filter(isRecent).map((message) => message.id);
   return { deletable, tooOld: matching.length - deletable.length };
+}
+
+interface PurgeScope {
+  /** How many of the latest messages to read. */
+  readonly scanLimit: number;
+  /** Only messages sent at or after this time. */
+  readonly since: number | undefined;
+  /** At most this many matching messages. */
+  readonly count: number | undefined;
+}
+
+/**
+ * How far back to look. A plain count reads the latest 100. With a user or text filter the
+ * matches can be further back, and without an amount everything from the last 14 days matches.
+ */
+export function purgeScope(
+  target: PurgeTarget | undefined,
+  filtered: boolean,
+  now: number,
+): PurgeScope {
+  if (target?.kind === "count") {
+    return {
+      scanLimit: filtered ? MAX_TIME_PURGE : MAX_PURGE,
+      since: undefined,
+      count: target.count,
+    };
+  }
+  return {
+    scanLimit: MAX_TIME_PURGE,
+    since: now - (target?.ms ?? BULK_DELETE_MAX_AGE_MS),
+    count: undefined,
+  };
+}
+
+/**
+ * Lets the amount come after the user, as in `-clear @user 30m`. The parser reads options in
+ * order, so there the amount lands at the start of the text filter.
+ */
+export function withAmountAfterUser<
+  T extends { amount: PurgeTarget | undefined; contains: string | undefined },
+>(values: T): T {
+  if (values.amount !== undefined || values.contains === undefined) return values;
+  const [first = "", ...rest] = values.contains.split(/\s+/);
+  const amount = parsePurgeTarget(first);
+  if (amount === undefined) return values;
+  return { ...values, amount, contains: rest.length > 0 ? rest.join(" ") : undefined };
 }

@@ -69,7 +69,7 @@ Every command works as a slash command and with the server's prefix (default `-`
 | `/unmute <user>`                                                     | End a member's timeout                                     |                                |
 | `/jail <user> [duration] [reason]`                                   | Give a member the jail role, for a while or until unjailed |                                |
 | `/unjail <user>`                                                     | Take the jail role away from a member                      |                                |
-| `/purge <amount> [user] [contains]`                                  | Delete recent messages in this channel                     | `-clear`, `-cclear`            |
+| `/purge [amount] [user] [contains]`                                  | Delete recent messages in this channel                     | `-clear`, `-cclear`            |
 | `/nick set [user] <nickname>`                                        | Set a nickname                                             | `-nickme`                      |
 | `/nick reset [user]`                                                 | Remove a nickname                                          | `-nickremove`, `-nickmeremove` |
 | `/nick revert [user]`                                                | Go back to the nickname before the last change             | `-nickrevert`, `-nickmerevert` |
