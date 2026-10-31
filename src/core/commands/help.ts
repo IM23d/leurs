@@ -82,9 +82,7 @@ function accessLines(command: Command, leaf?: Leaf): string[] {
   ];
 }
 
-const DIVIDER = "─".repeat(16);
-
-/** The aliases of a help page, listed once at the bottom under a divider. */
+/** The aliases of a help page, listed once at the bottom. */
 const aliasSection = (
   pairs: readonly (readonly [alias: string, path: string])[],
   textPrefix: string,
@@ -92,7 +90,6 @@ const aliasSection = (
   pairs.length > 0
     ? [
         "",
-        DIVIDER,
         "**Aliases**",
         ...pairs.map(
           ([alias, path]) => `${code(`${textPrefix}${alias}`)} for ${code(`${textPrefix}${path}`)}`,
