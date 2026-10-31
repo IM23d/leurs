@@ -87,13 +87,15 @@ const aliasLine = (aliases: readonly string[], textPrefix: string) =>
     ? [`**Also works as:** ${aliases.map((alias) => code(`${textPrefix}${alias}`)).join(", ")}`]
     : [];
 
+const sentence = (text: string) => (/[.!?]$/.test(text) ? text : `${text}.`);
+
 function optionLine(name: string, option: AnyOption): string {
   const { description, placeholder, rest, choices } = option.spec;
   const kind = rest ? `${placeholder}, rest of the message` : placeholder;
   const allowed = choices
     ? ` One of: ${choices.map((c) => code(String(c.value))).join(", ")}.`
     : "";
-  return `${code(name)} ${kind}, ${option.required ? "required" : "optional"}. ${description}.${allowed}`;
+  return `${code(name)} ${kind}, ${option.required ? "required" : "optional"}. ${sentence(description)}${allowed}`;
 }
 
 const pathOf = (command: Command, name: string) =>
