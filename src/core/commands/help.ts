@@ -82,10 +82,27 @@ function accessLines(command: Command, leaf?: Leaf): string[] {
   ];
 }
 
-const aliasLine = (aliases: readonly string[], textPrefix: string) =>
-  aliases.length > 0
-    ? [`**Also works as:** ${aliases.map((alias) => code(`${textPrefix}${alias}`)).join(", ")}`]
+const DIVIDER = "─".repeat(16);
+
+/** The aliases of a help page, listed once at the bottom under a divider. */
+const aliasSection = (
+  pairs: readonly (readonly [alias: string, path: string])[],
+  textPrefix: string,
+) =>
+  pairs.length > 0
+    ? [
+        "",
+        DIVIDER,
+        "**Aliases**",
+        ...pairs.map(
+          ([alias, path]) => `${code(`${textPrefix}${alias}`)} for ${code(`${textPrefix}${path}`)}`,
+        ),
+      ]
     : [];
+
+/** "bday set" is just the command alias plus the subcommand, so it needs no line of its own. */
+const isDerived = (command: Command, name: string, alias: string) =>
+  command.aliases.some((commandAlias) => alias === `${commandAlias} ${name}`);
 
 const sentence = (text: string) => (/[.!?]$/.test(text) ? text : `${text}.`);
 
@@ -114,11 +131,14 @@ export function leafHelp(
     leaf.description,
     "",
     `**Usage:** ${code(usage(prefix, path, leaf.options))}`,
-    ...aliasLine(aliases, textPrefix),
     ...accessLines(command, leaf),
     ...(options.length > 0
       ? ["", "**Options**", ...options.map(([key, option]) => optionLine(key, option))]
       : []),
+    ...aliasSection(
+      aliases.map((alias) => [alias, path] as const),
+      textPrefix,
+    ),
   ];
   return embed(lines.join("\n"))
     .setTitle(`${prefix}${path}`)
@@ -130,7 +150,6 @@ export function commandHelp(command: Command, { prefix, textPrefix }: HelpPrefix
   const intro = [
     command.description,
     "",
-    ...aliasLine(command.aliases, textPrefix),
     ...(command.defaultSubcommand === undefined
       ? []
       : [
@@ -140,18 +159,26 @@ export function commandHelp(command: Command, { prefix, textPrefix }: HelpPrefix
     "",
     "**Subcommands**",
   ].join("\n");
-  const entries = [...command.leaves].map(([name, leaf]) =>
-    [
+  const entries = [...command.leaves].map(
+    ([name, leaf]) =>
       `${code(usage(prefix, pathOf(command, name), leaf.options))} ${leaf.description}`,
-      ...aliasLine(leaf.aliases, textPrefix),
-    ].join("\n"),
   );
+  const aliases = aliasSection(
+    [
+      ...command.aliases.map((alias) => [alias, command.name] as const),
+      ...[...command.leaves].flatMap(([name, leaf]) =>
+        leaf.aliases
+          .filter((alias) => !isDerived(command, name, alias))
+          .map((alias) => [alias, pathOf(command, name)] as const),
+      ),
+    ],
+    textPrefix,
+  ).join("\n");
   const subcommands = joinWithin(entries, {
-    separator: "\n\n",
-    reserve: intro.length + 1,
+    reserve: intro.length + aliases.length + 1,
     more: (hidden) => `And ${hidden} more.`,
   });
-  return embed(`${intro}\n${subcommands}`)
+  return embed(`${intro}\n${subcommands}\n${aliases}`)
     .setTitle(`${prefix}${command.name}`)
     .setFooter({
       text: `Add --help after a subcommand to see its options, e.g. ${textPrefix}${pathOf(command, [...command.leaves.keys()][0] ?? "")} --help`,

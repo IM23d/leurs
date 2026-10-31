@@ -59,9 +59,16 @@ describe("help embeds", () => {
 
   it("shows the command, then each subcommand", () => {
     const text = commandHelp(birthday, prefixes).data.description ?? "";
-    expect(text.indexOf("**Subcommands**")).toBeGreaterThan(text.indexOf("`-bday`"));
+    expect(text.indexOf("**Aliases**")).toBeGreaterThan(text.indexOf("**Subcommands**"));
     expect(text).toContain("`-birthday set <date>` Set your birthday");
     expect(text).toContain("**Default:** `-birthday` runs `show`");
+    expect(text).toContain("**Aliases**\n`-bday` for `-birthday`");
+    expect(text).not.toContain("`-bday set` for");
+  });
+
+  it("lists aliases that are not just the command alias plus the subcommand", () => {
+    const text = commandHelp(jobs, prefixes).data.description ?? "";
+    expect(text).toContain("`-buyjob` for `-jobs buy`");
   });
 
   it("shows a subcommand's usage and options", () => {
@@ -70,6 +77,6 @@ describe("help embeds", () => {
     const text = leafHelp(target, prefixes).data.description ?? "";
     expect(text).toContain("**Usage:** `-birthday set <date>`");
     expect(text).toContain("`date` text, required. Your birthday, e.g. 24.12.");
-    expect(text).toContain("`-bday set`");
+    expect(text).toContain("**Aliases**\n`-bday set` for `-birthday set`");
   });
 });
