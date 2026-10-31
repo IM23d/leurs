@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { BULK_DELETE_MAX_AGE_MS, planPurge } from "./purge.service.ts";
+import { BULK_DELETE_MAX_AGE_MS, parsePurgeTarget, planPurge } from "./purge.service.ts";
 
 const now = 100 * 86_400_000;
 const message = (id: string, authorId: string, content: string, ageMs = 0) => ({
@@ -36,5 +36,24 @@ describe("planPurge", () => {
       deletable: ["3", "2"],
       tooOld: 1,
     });
+  });
+});
+
+describe("parsePurgeTarget", () => {
+  it("reads counts and time spans", () => {
+    expect(parsePurgeTarget("50")).toEqual({ kind: "count", count: 50 });
+    expect(parsePurgeTarget("30m")).toEqual({ kind: "since", ms: 1_800_000 });
+    expect(parsePurgeTarget("1mon")).toEqual({ kind: "since", ms: 2_592_000_000 });
+  });
+
+  it.each(["0", "101", "soon", ""])("rejects %j", (text) => {
+    expect(parsePurgeTarget(text)).toBeUndefined();
+  });
+});
+
+it("keeps only messages from the time span", () => {
+  expect(planPurge(messages, { since: now - 1000 }, now)).toEqual({
+    deletable: ["5", "4", "3", "2"],
+    tooOld: 0,
   });
 });

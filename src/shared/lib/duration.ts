@@ -2,17 +2,41 @@ const UNITS = { s: 1000, m: 60_000, h: 3_600_000, d: 86_400_000, w: 604_800_000 
 const UNIT_NAMES = { s: "second", m: "minute", h: "hour", d: "day", w: "week" } as const;
 type Unit = keyof typeof UNITS;
 
-const PART = /(\d+)\s*([smhdw])/gi;
-/** Longer durations are almost certainly typos and do not fit in a Date. */
-const MAX_DURATION_MS = 10 * 365 * UNITS.d;
+const MONTH_MS = 30 * UNITS.d;
+const YEAR_MS = 365 * UNITS.d;
 
-/** Parses "30m", "1h30m" or "2d 4h" into milliseconds. Returns undefined for anything else. */
+/** Every unit name people type, e.g. "30m", "30min", "1mon", "2 hours". */
+const UNIT_WORDS: Record<string, number> = Object.fromEntries(
+  (
+    [
+      [UNITS.s, ["s", "sec", "secs", "second", "seconds"]],
+      [UNITS.m, ["m", "min", "mins", "minute", "minutes"]],
+      [UNITS.h, ["h", "hr", "hrs", "hour", "hours"]],
+      [UNITS.d, ["d", "day", "days"]],
+      [UNITS.w, ["w", "wk", "week", "weeks"]],
+      [MONTH_MS, ["mo", "mon", "month", "months"]],
+      [YEAR_MS, ["y", "yr", "year", "years"]],
+    ] as const
+  ).flatMap(([ms, words]) => words.map((word) => [word, ms])),
+);
+
+const PART = /(\d+)\s*([a-z]+)/g;
+/** Longer durations are almost certainly typos and do not fit in a Date. */
+const MAX_DURATION_MS = 10 * YEAR_MS;
+
+/**
+ * Parses "30m", "1h30m", "2d 4h", "30sec" or "1mon" into milliseconds. A month counts as 30
+ * days. Returns undefined for anything else.
+ */
 export function parseDuration(input: string): number | undefined {
   const text = input.trim().toLowerCase();
-  if (!/^(\d+\s*[smhdw]\s*)+$/.test(text)) return undefined;
-  const total = [...text.matchAll(PART)]
-    .map(([, amount, unit]) => Number(amount) * UNITS[unit as Unit])
-    .reduce((sum, ms) => sum + ms, 0);
+  if (!/^(\d+\s*[a-z]+\s*)+$/.test(text)) return undefined;
+  const parts = [...text.matchAll(PART)].map(([, amount, unit = ""]) => {
+    const ms = UNIT_WORDS[unit];
+    return ms === undefined ? undefined : Number(amount) * ms;
+  });
+  if (parts.includes(undefined)) return undefined;
+  const total = parts.reduce<number>((sum, ms) => sum + (ms ?? 0), 0);
   return total > 0 && total <= MAX_DURATION_MS ? total : undefined;
 }
 

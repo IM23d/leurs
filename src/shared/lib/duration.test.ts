@@ -9,11 +9,16 @@ describe("parseDuration", () => {
     ["1h30m", 5_400_000],
     ["2d 4h", 187_200_000],
     ["1w", 604_800_000],
+    ["30sec", 30_000],
+    ["30min", 1_800_000],
+    ["2 hours", 7_200_000],
+    ["1mon", 2_592_000_000],
+    ["1 month 2 days", 2_764_800_000],
   ])("reads %s", (input, expected) => {
     expect(parseDuration(input)).toBe(expected);
   });
 
-  it.each(["", "abc", "5", "5x", "0m", "5m extra"])("rejects %j", (input) => {
+  it.each(["", "abc", "5", "5x", "0m", "5m extra", "3 apples", "99999y"])("rejects %j", (input) => {
     expect(parseDuration(input)).toBeUndefined();
   });
 });

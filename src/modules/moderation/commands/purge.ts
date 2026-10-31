@@ -4,22 +4,44 @@ import type { CommandContext } from "#core/commands/context.ts";
 import { defineCommand } from "#core/commands/define.ts";
 import { opt } from "#core/commands/options.ts";
 import { UserError } from "#core/errors.ts";
+import { chunks } from "#shared/lib/chunks.ts";
+import { formatDuration } from "#shared/lib/duration.ts";
 import { successEmbed } from "#shared/ui/embeds.ts";
 
 import { asBot } from "../guards.ts";
 import { logModAction } from "../mod-log.ts";
 import { mentionedUser } from "../options.ts";
-import { MAX_PURGE, planPurge } from "../purge.service.ts";
+import { MAX_PURGE, MAX_TIME_PURGE, parsePurgeTarget, planPurge } from "../purge.service.ts";
 
 const CONFIRMATION_SECONDS = 5;
 
 /**
- * The latest messages, newest first. For a prefix command these are the ones before the command
- * message. Discord returns at most 100 per request, which is also the purge limit.
+ * Messages before the prefix command (or the latest, for slash), newest first. Pages back until
+ * one is older than `since` or `limit` messages are read. Discord returns 100 per request.
  */
-async function recentMessages(ctx: CommandContext): Promise<Message[]> {
-  const before = ctx.messageId === undefined ? {} : { before: ctx.messageId };
-  return [...(await ctx.channel.messages.fetch({ limit: MAX_PURGE, ...before })).values()];
+async function recentMessages(ctx: CommandContext, limit: number, since = 0): Promise<Message[]> {
+  const collected: Message[] = [];
+  let before = ctx.messageId;
+  while (collected.length < limit) {
+    const page = await ctx.channel.messages.fetch({
+      limit: Math.min(MAX_PURGE, limit - collected.length),
+      ...(before === undefined ? {} : { before }),
+    });
+    collected.push(...page.values());
+    const oldest = page.last();
+    if (page.size < MAX_PURGE || !oldest || oldest.createdTimestamp < since) break;
+    before = oldest.id;
+  }
+  return collected;
+}
+
+/** Bulk-deletes in batches of 100, the most Discord accepts at once. */
+async function deleteAll(ctx: CommandContext, ids: readonly string[]): Promise<number> {
+  let deleted = 0;
+  for (const batch of chunks(ids, MAX_PURGE)) {
+    deleted += (await asBot("delete messages", () => ctx.channel.bulkDelete(batch, true))).size;
+  }
+  return deleted;
 }
 
 export const purgeCommand = defineCommand({
@@ -28,26 +50,40 @@ export const purgeCommand = defineCommand({
   aliases: ["clear", "cclear"],
   permissions: PermissionFlagsBits.ManageMessages,
   options: {
-    amount: opt.integer("How many messages to delete").min(1).max(MAX_PURGE),
+    amount: opt.custom(
+      `How many messages (up to ${MAX_PURGE}) or how far back, e.g. 50, 30m, 1d`,
+      "number or duration",
+      parsePurgeTarget,
+    ),
     user: mentionedUser("Only messages from this person").optional(),
     contains: opt.string("Only messages containing this text").rest().optional(),
   },
   run: async (ctx, { amount, user, contains }) => {
     await ctx.defer({ private: true });
-    const candidates = (await recentMessages(ctx)).map((message) => ({
+    const since = amount.kind === "since" ? Date.now() - amount.ms : undefined;
+    const fetched = await (amount.kind === "count"
+      ? recentMessages(ctx, MAX_PURGE)
+      : recentMessages(ctx, MAX_TIME_PURGE, since));
+    const candidates = fetched.map((message) => ({
       id: message.id,
       authorId: message.author.id,
       content: message.content,
       createdAt: message.createdAt,
     }));
-    const plan = planPurge(candidates, { amount, authorId: user?.id, contains });
+    const plan = planPurge(candidates, {
+      amount: amount.kind === "count" ? amount.count : undefined,
+      since,
+      authorId: user?.id,
+      contains,
+    });
     if (plan.deletable.length === 0 && plan.tooOld === 0) {
-      throw new UserError(`No matching messages in the last ${MAX_PURGE}.`);
+      throw new UserError(
+        amount.kind === "count"
+          ? `No matching messages in the last ${MAX_PURGE}.`
+          : `No matching messages in the last ${formatDuration(amount.ms)}.`,
+      );
     }
-    const deleted =
-      plan.deletable.length === 0
-        ? 0
-        : (await asBot("delete messages", () => ctx.channel.bulkDelete(plan.deletable, true))).size;
+    const deleted = await deleteAll(ctx, plan.deletable);
     // The prefix command goes too, so only the short confirmation is left, and then nothing.
     if (ctx.messageId !== undefined) {
       await ctx.channel.messages.delete(ctx.messageId).catch(() => undefined);
