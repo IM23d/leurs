@@ -32,7 +32,8 @@
     "import:json": "node --env-file=.env scripts/import-json/index.ts",
     "docs:commands": "node scripts/gen-docs.ts && prettier --write docs/commands.md",
     "prepare": "lefthook install || true",
-    "db:check": "drizzle-kit check"
+    "db:check": "drizzle-kit check",
+    "scan:levels": "node --env-file-if-exists=.env scripts/scan-levels.ts"
   },
   "dependencies": {
     "@napi-rs/canvas": "^1.1.0",
