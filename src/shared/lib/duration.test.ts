@@ -1,0 +1,31 @@
+import { describe, expect, it } from "vitest";
+
+import { formatDuration, isPermanent, parseDuration } from "./duration.ts";
+
+describe("parseDuration", () => {
+  it.each([
+    ["30s", 30_000],
+    ["5m", 300_000],
+    ["1h30m", 5_400_000],
+    ["2d 4h", 187_200_000],
+    ["1w", 604_800_000],
+  ])("reads %s", (input, expected) => {
+    expect(parseDuration(input)).toBe(expected);
+  });
+
+  it.each(["", "abc", "5", "5x", "0m", "5m extra"])("rejects %j", (input) => {
+    expect(parseDuration(input)).toBeUndefined();
+  });
+});
+
+describe("formatDuration", () => {
+  it("names each non-zero part", () => {
+    expect(formatDuration(90_061_000)).toBe("1 day, 1 hour, 1 minute, 1 second");
+    expect(formatDuration(500)).toBe("less than a second");
+  });
+});
+
+it("recognises permanent", () => {
+  expect(isPermanent("Perm")).toBe(true);
+  expect(isPermanent("1d")).toBe(false);
+});

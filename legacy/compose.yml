@@ -1,0 +1,9 @@
+services:
+  leurs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: leurs-bot
+    env_file:
+      - .env
+    restart: unless-stopped

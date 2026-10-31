@@ -1,9 +1,11 @@
 services:
   leurs:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: leurs-bot
-    env_file:
-      - .env
+    build: .
+    container_name: leurs
+    env_file: .env
+    environment:
+      DATABASE_PATH: /app/data/leurs.db
+    volumes:
+      - ./data:/app/data
+      - ./assets/fun:/app/assets/fun:ro
     restart: unless-stopped

@@ -1,4 +1,5 @@
 # <p align="center">Leurs - Discord Balance Bot</p>
+
 <p align="center">
   <img src="./assets/leurs-logo-circle.png" width="200" alt="Leurs Discord Bot Logo">
 </p>
@@ -29,6 +30,7 @@
 ### Using Docker (Recommended)
 
 **1. Create your configuration:**
+
 ```bash
 # Clone the repository
 git clone https://github.com/IM23d/leurs.git
@@ -40,6 +42,7 @@ cp .env.template .env
 ```
 
 **2. Create a `compose.yml` file:**
+
 ```yaml
 services:
   leurs:
@@ -53,6 +56,7 @@ services:
 ```
 
 **3. Start the bot:**
+
 ```bash
 docker compose up -d
 ```
@@ -100,13 +104,13 @@ DEEPSEEK_API_KEY=your_deepseek_api_key
 
 ## 🎮 Command Categories
 
-| Category | Examples | Description |
-|----------|----------|-------------|
-| **Economy** | `-balance`, `-work`, `-gamble` | Manage virtual currency and jobs |
-| **Moderation** | `-warn`, `-ban`, `-mute` | Keep your server organized |
-| **Music** | `-np`, `-lastfm` | Share what you're listening to |
-| **Levels** | `-rank`, `-leveltop` | Track your server progression |
-| **Utility** | `-info`, `-birthday` | Helpful server tools |
+| Category       | Examples                       | Description                      |
+| -------------- | ------------------------------ | -------------------------------- |
+| **Economy**    | `-balance`, `-work`, `-gamble` | Manage virtual currency and jobs |
+| **Moderation** | `-warn`, `-ban`, `-mute`       | Keep your server organized       |
+| **Music**      | `-np`, `-lastfm`               | Share what you're listening to   |
+| **Levels**     | `-rank`, `-leveltop`           | Track your server progression    |
+| **Utility**    | `-info`, `-birthday`           | Helpful server tools             |
 
 For complete command documentation, visit **[docs.leurs.ch](https://docs.leurs.ch)**
 
@@ -167,6 +171,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## ⭐ Support the Project
 
 If Leurs has enhanced your Discord server experience, please consider:
+
 - ⭐ **Starring this repository** to show your support
 - 🐛 **Reporting bugs** to help us improve
 - 💡 **Suggesting features** for future updates
@@ -179,6 +184,5 @@ If Leurs has enhanced your Discord server experience, please consider:
 - **Pull Requests**: [GitHub PRs](https://github.com/IM23d/leurs/pulls)
 
 ---
-
 
 <p align="center">Made with ❤️ by the <strong>Leurs Team</strong></p>

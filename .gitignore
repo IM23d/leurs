@@ -1,87 +1,9 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Discord Bot specific
-token.txt
-config.json
+node_modules/
 .env
-
-# IDE files
+data/
+assets/fun/
+coverage/
+.DS_Store
 .idea/
 .vscode/
-
-# Others
-.DS_Store
-
-# git ignore sensitive data
-/data/bank.json
-/data/jobs.json
-/data/levels.json
-/data/lastfm.json
-/data/voice_levels.json
-
-/data
-
-myenv/
-venv/
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Discord Bot specific
-token.txt
-config.json
-.env
-
-# IDE files
-.idea/
-.vscode/
-
-# Others
-.DS_Store
-
-# git ignore sensitive data
-/data/bank.json
-/data/jobs.json
-/data/levels.json
-/data/lastfm.json
-/data/voice_levels.json
-
-/data
+legacy/**/__pycache__/
