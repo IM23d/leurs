@@ -168,10 +168,10 @@ Every command works as a slash command and with the server's prefix (default `-`
 
 ## wordle
 
-| Command                | Description                                                    | Also works as |
-| ---------------------- | -------------------------------------------------------------- | ------------- |
-| `/wordle stats [user]` | Show a player's games, solve rate, average guesses and streaks |               |
-| `/wordle leaderboard`  | Compare everyone by average guesses and games solved           | `-wordletop`  |
+| Command                      | Description                                                    | Also works as |
+| ---------------------------- | -------------------------------------------------------------- | ------------- |
+| `/wordle stats [user]`       | Show a player's games, solve rate, average guesses and streaks |               |
+| `/wordle leaderboard [sort]` | Compare everyone by crowns, average guesses or games solved    | `-wordletop`  |
 
 ## fun
 

@@ -2,6 +2,7 @@ import type { EmbedBuilder, User } from "discord.js";
 
 import { embed } from "#shared/ui/embeds.ts";
 
+import { rank, SORTS, type SortName } from "./wordle-sort.ts";
 import type { GroupStats, PlayerStats } from "./wordle.service.ts";
 
 const BAR_WIDTH = 12;
@@ -41,17 +42,19 @@ export function playerEmbed(user: User, stats: PlayerStats | undefined): EmbedBu
     );
 }
 
-/** Players ranked by average guesses. Players with no solved game come last. */
-export function leaderboardEmbed(group: GroupStats): EmbedBuilder {
-  const ranked = group.players.toSorted(
-    (a, b) => (a.average ?? 7) - (b.average ?? 7) || b.solved - a.solved,
-  );
-  const lines = ranked.map(
-    (player, index) =>
-      `${index + 1}. <@${player.userId}> **${average(player.average)}** avg · ${player.solved}/${player.played} solved · ${player.crowns} crowns`,
+/** Every player in the chosen order. The value the list is sorted by is shown in bold. */
+export function leaderboardEmbed(group: GroupStats, sort: SortName): EmbedBuilder {
+  const bold = (name: SortName, text: string) => (name === sort ? `**${text}**` : text);
+  const lines = rank(group.players, sort).map((player, index) =>
+    [
+      `${index + 1}. <@${player.userId}>`,
+      bold("crowns", `${player.crowns} crowns`),
+      bold("average", `${average(player.average)} avg`),
+      bold("solved", `${player.solved}/${player.played} solved`),
+    ].join(" · "),
   );
   return embed(lines.length > 0 ? lines.join("\n") : "No Wordle results yet.")
-    .setTitle("Wordle leaderboard")
+    .setTitle(`Wordle leaderboard by ${SORTS[sort].label.toLowerCase()}`)
     .setFooter({
       text: `${group.days} days · ${group.games} games · ${percent(group.solved, group.games)} solved`,
     });

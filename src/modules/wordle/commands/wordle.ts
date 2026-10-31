@@ -1,8 +1,10 @@
 import { defineCommand, subcommand } from "#core/commands/define.ts";
 import { opt } from "#core/commands/options.ts";
 
+import { leaderboardMessage } from "../components/leaderboard-sort.ts";
+import { isSortName, SORTS } from "../wordle-sort.ts";
 import { groupStats } from "../wordle.service.ts";
-import { leaderboardEmbed, playerEmbed } from "../wordle.views.ts";
+import { playerEmbed } from "../wordle.views.ts";
 
 export const wordleCommand = defineCommand({
   name: "wordle",
@@ -19,10 +21,16 @@ export const wordleCommand = defineCommand({
       },
     }),
     leaderboard: subcommand({
-      description: "Compare everyone by average guesses and games solved",
+      description: "Compare everyone by crowns, average guesses or games solved",
       aliases: ["wordletop"],
-      run: async (ctx) => {
-        await ctx.reply(leaderboardEmbed(groupStats(ctx.guild.id)));
+      options: {
+        sort: opt
+          .string("What to sort by")
+          .choices(Object.entries(SORTS).map(([value, { label }]) => ({ name: label, value })))
+          .optional(),
+      },
+      run: async (ctx, { sort = "crowns" }) => {
+        await ctx.reply(leaderboardMessage(ctx.guild.id, isSortName(sort) ? sort : "crowns"));
       },
     }),
   },
