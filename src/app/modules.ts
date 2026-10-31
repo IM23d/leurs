@@ -21,6 +21,7 @@ import { toolsModule } from "#modules/tools/index.ts";
 import { typingModule } from "#modules/typing/index.ts";
 import { voiceLogModule } from "#modules/voice-log/index.ts";
 import { weatherModule } from "#modules/weather/index.ts";
+import { wordleModule } from "#modules/wordle/index.ts";
 
 /** Every feature module the bot loads, in the order /help lists them. Add a module here to enable it. */
 export const modules: readonly Module[] = [
@@ -42,6 +43,7 @@ export const modules: readonly Module[] = [
   quoteModule,
   weatherModule,
   typingModule,
+  wordleModule,
   funModule,
   lastfmModule,
   aiModule,

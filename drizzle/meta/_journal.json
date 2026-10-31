@@ -15,6 +15,13 @@
       "when": 1793469275488,
       "tag": "0001_voice-log",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793472658129,
+      "tag": "0002_wordle",
+      "breakpoints": true
     }
   ]
 }

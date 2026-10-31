@@ -166,6 +166,13 @@ Every command works as a slash command and with the server's prefix (default `-`
 | `/typing accept [id]`              | Accept a typing challenge                  | `-accept`                            |
 | `/typing list`                     | List the typing challenges waiting for you | `-mtlist`, `-mtl`, `-challenges`     |
 
+## wordle
+
+| Command                | Description                                                    | Also works as |
+| ---------------------- | -------------------------------------------------------------- | ------------- |
+| `/wordle stats [user]` | Show a player's games, solve rate, average guesses and streaks |               |
+| `/wordle leaderboard`  | Compare everyone by average guesses and games solved           | `-wordletop`  |
+
 ## fun
 
 | Command    | Description                 | Also works as                      |
