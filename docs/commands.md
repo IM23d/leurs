@@ -161,13 +161,9 @@ Every command works as a slash command and with the server's prefix (default `-`
 
 ## fun
 
-| Command           | Description                 | Also works as                      |
-| ----------------- | --------------------------- | ---------------------------------- |
-| `/fortune`        | Break open a fortune cookie | `-fortunecookie`, `-cookie`, `-fc` |
-| `/fun code`       | Post the code               | `-code`                            |
-| `/fun geschichte` | Tell the story              | `-geschichte`                      |
-| `/fun hi`         | Say hi                      | `-hi`                              |
-| `/fun lyric`      | Post a random lyric         | `-lyric`                           |
+| Command    | Description                 | Also works as                      |
+| ---------- | --------------------------- | ---------------------------------- |
+| `/fortune` | Break open a fortune cookie | `-fortunecookie`, `-cookie`, `-fc` |
 
 ## lastfm
 

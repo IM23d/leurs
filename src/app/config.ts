@@ -32,7 +32,16 @@ let current: Config | undefined;
 
 /** Parses the environment once. Throws with every missing or invalid variable listed. */
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
-  current = schema.parse(env);
+  const result = schema.safeParse(env);
+  if (!result.success) {
+    const problems = result.error.issues.map(
+      (issue) => `  ${issue.path.join(".")}: ${issue.message}`,
+    );
+    throw new Error(
+      `Invalid configuration. Check your .env file or environment:\n${problems.join("\n")}`,
+    );
+  }
+  current = result.data;
   return current;
 }
 

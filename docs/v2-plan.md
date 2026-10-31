@@ -23,7 +23,7 @@ of the Python bot is ported except the ones listed under "Removed". The Python c
 | Command                                                                                  | Why                                                                     |
 | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
 | `deposit`, `dep`, `withdraw`, `wit`                                                      | Wallet and bank are merged                                              |
-| `david`, `hwmo`, `github`                                                                | Dropped on request                                                      |
+| `david`, `hwmo`, `github`, `code`, `geschichte`, `hi`, `lyric`                           | Dropped on request                                                      |
 | `languages`                                                                              | Autocomplete on `/translate` replaces it                                |
 | `set_deepseek_api_key`, `set_google_api_key`, `set_google_cse_id`, `set_weather_api_key` | Keys come from `.env` only. Weather never needed a key                  |
 | `cclear -scan`, `-p`, `-current`                                                         | The on-disk message cache is gone. `cclear` is now an alias of `/purge` |

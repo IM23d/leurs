@@ -18,7 +18,7 @@
   },
   "scripts": {
     "dev": "node --watch --env-file=.env src/index.ts",
-    "start": "node src/index.ts",
+    "start": "node --env-file-if-exists=.env src/index.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",

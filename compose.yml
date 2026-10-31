@@ -7,5 +7,4 @@ services:
       DATABASE_PATH: /app/data/leurs.db
     volumes:
       - ./data:/app/data
-      - ./assets/fun:/app/assets/fun:ro
     restart: unless-stopped
