@@ -1,7 +1,7 @@
 import type { Message, MessageReaction, PartialMessageReaction } from "discord.js";
 
 import { savePost, type ClownboardPost, type ClownboardSettings } from "./clownboard.service.ts";
-import { boardMessage, counterLine } from "./clownboard.views.ts";
+import { boardContent, boardMessage } from "./clownboard.views.ts";
 
 /** Votes that count: no bots, and not the author voting on their own message. */
 export async function countVotes(
@@ -26,7 +26,7 @@ export async function refreshPost(
   if (!board?.isSendable()) return;
   if (post.boardMessageId !== null) {
     const sent = await board.messages.fetch(post.boardMessageId).catch(() => undefined);
-    await sent?.edit({ content: counterLine(settings.emoji, count, message.channelId) });
+    await sent?.edit({ content: boardContent(message, settings.emoji, count) });
     savePost({ ...post, count });
     return;
   }
