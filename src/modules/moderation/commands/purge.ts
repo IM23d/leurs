@@ -13,12 +13,13 @@ import { MAX_PURGE, planPurge } from "../purge.service.ts";
 
 const CONFIRMATION_SECONDS = 5;
 
-/** The latest messages, newest first, without the prefix command that started the purge. */
+/**
+ * The latest messages, newest first. For a prefix command these are the ones before the command
+ * message. Discord returns at most 100 per request, which is also the purge limit.
+ */
 async function recentMessages(ctx: CommandContext): Promise<Message[]> {
-  const messages = await ctx.channel.messages.fetch({ limit: MAX_PURGE + 1 });
-  return [...messages.values()]
-    .filter((message) => message.id !== ctx.messageId)
-    .slice(0, MAX_PURGE);
+  const before = ctx.messageId === undefined ? {} : { before: ctx.messageId };
+  return [...(await ctx.channel.messages.fetch({ limit: MAX_PURGE, ...before })).values()];
 }
 
 export const purgeCommand = defineCommand({
