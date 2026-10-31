@@ -73,7 +73,13 @@ async function countChannel(channel: GuildTextBasedChannel, counts: Map<string, 
 
 const config = loadConfig();
 openDb(config.DATABASE_PATH);
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages] });
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildMessages,
+  ],
+});
 await client.login(config.DISCORD_TOKEN);
 
 try {
@@ -94,7 +100,8 @@ try {
     .filter(({ messages, before }) => messages > before.messages)
     .toSorted((a, b) => b.messages - a.messages);
 
-  const members = await guild.members.fetch();
+  // Names are only for the table, so a failed lookup must not throw away the scan.
+  const members = await guild.members.fetch().catch(() => guild.members.cache);
   const name = (userId: string) => members.get(userId)?.user.username ?? `left (${userId})`;
   console.log(`\n${counts.size} people wrote messages. ${changes.length} would go up:`);
   console.table(
