@@ -11,12 +11,14 @@ import { logModAction } from "../mod-log.ts";
 import { mentionedUser } from "../options.ts";
 import { MAX_PURGE, planPurge } from "../purge.service.ts";
 
+const CONFIRMATION_SECONDS = 5;
+
 /** The latest messages, newest first, without the prefix command that started the purge. */
 async function recentMessages(ctx: CommandContext): Promise<Message[]> {
-  const messages = [...(await ctx.channel.messages.fetch({ limit: MAX_PURGE })).values()];
-  if (ctx.source === "slash") return messages;
-  const command = messages.findIndex((message) => message.author.id === ctx.user.id);
-  return messages.toSpliced(command, command === -1 ? 0 : 1);
+  const messages = await ctx.channel.messages.fetch({ limit: MAX_PURGE + 1 });
+  return [...messages.values()]
+    .filter((message) => message.id !== ctx.messageId)
+    .slice(0, MAX_PURGE);
 }
 
 export const purgeCommand = defineCommand({
@@ -45,10 +47,15 @@ export const purgeCommand = defineCommand({
       plan.deletable.length === 0
         ? 0
         : (await asBot("delete messages", () => ctx.channel.bulkDelete(plan.deletable, true))).size;
+    // The prefix command goes too, so only the short confirmation is left, and then nothing.
+    if (ctx.messageId !== undefined) {
+      await ctx.channel.messages.delete(ctx.messageId).catch(() => undefined);
+    }
     const skipped = plan.tooOld === 0 ? "" : ` Skipped ${plan.tooOld} older than 14 days.`;
     await ctx.reply({
       embeds: [successEmbed(`Deleted ${deleted} message${deleted === 1 ? "" : "s"}.${skipped}`)],
       private: true,
+      deleteAfter: CONFIRMATION_SECONDS,
     });
     const filters = [user && `from ${user.toString()}`, contains && `containing "${contains}"`]
       .filter(Boolean)

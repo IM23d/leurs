@@ -15,7 +15,7 @@ export function prefixContext(
   let replied = false;
 
   const send = async (reply: Reply): Promise<Message> => {
-    const { private: isPrivate, ...options } = toReplyOptions(reply);
+    const { private: isPrivate, deleteAfter, ...options } = toReplyOptions(reply);
     const sent = replied
       ? await channel.send(options)
       : await message.reply({
@@ -24,8 +24,14 @@ export function prefixContext(
           failIfNotExists: false,
         });
     replied = true;
-    if (isPrivate) {
-      setTimeout(() => void sent.delete().catch(() => undefined), PRIVATE_REPLY_LIFETIME_MS);
+    const lifetime =
+      deleteAfter === undefined
+        ? isPrivate
+          ? PRIVATE_REPLY_LIFETIME_MS
+          : undefined
+        : deleteAfter * 1000;
+    if (lifetime !== undefined) {
+      setTimeout(() => void sent.delete().catch(() => undefined), lifetime);
     }
     return sent;
   };
@@ -39,6 +45,7 @@ export function prefixContext(
     channel,
     prefix,
     commands,
+    messageId: message.id,
     reply: send,
     defer: () => channel.sendTyping(),
     referencedMessage: async () =>

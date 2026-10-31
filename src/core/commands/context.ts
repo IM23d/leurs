@@ -23,6 +23,8 @@ export interface ReplyOptions {
    * because prefix replies cannot be private.
    */
   private?: boolean;
+  /** Deletes the reply after this many seconds, e.g. for a short confirmation. */
+  deleteAfter?: number;
 }
 
 export type Reply = string | EmbedBuilder | ReplyOptions;
@@ -38,6 +40,8 @@ export interface CommandContext {
   /** How to call a command in this context, e.g. "/" or "-". For help and usage text. */
   readonly prefix: string;
   readonly commands: readonly Command[];
+  /** Prefix only: the ID of the message that ran the command. */
+  readonly messageId: string | undefined;
   /** The first call replies, later calls send follow-ups. Returns the sent message. */
   reply(reply: Reply): Promise<Message>;
   /**

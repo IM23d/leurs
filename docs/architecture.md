@@ -125,6 +125,8 @@ export const rankCommand = defineCommand({
 - Component state lives in the custom ID (`customId(component, ...args)`), so buttons keep
   working after a restart.
 - `private: true` makes a slash reply ephemeral. A prefix reply deletes itself after 15 seconds.
+- `deleteAfter: 5` deletes a reply after 5 seconds, for short confirmations. `ctx.messageId` is
+  the prefix command's own message, for commands that clean up after themselves.
 - A command that calls `ctx.defer()` and then replies privately must call
   `ctx.defer({ private: true })`, because a slash reply cannot become private after a public defer.
 

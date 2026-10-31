@@ -2,7 +2,7 @@ import { MessageFlags, type ChatInputCommandInteraction, type Message } from "di
 
 import { UserError } from "../errors.ts";
 
-import { toReplyOptions, type CommandContext, type Reply } from "./context.ts";
+import { toReplyOptions, type CommandContext, type Reply, type ReplyOptions } from "./context.ts";
 import type { Command } from "./define.ts";
 
 export function slashContext(
@@ -11,12 +11,9 @@ export function slashContext(
 ): CommandContext {
   const { channel } = interaction;
   if (!channel) throw new UserError("I can't see this channel. Check my permissions here.");
-  const send = async (reply: Reply): Promise<Message> => {
-    const { private: isPrivate, ...options } = toReplyOptions(reply);
+  const post = async ({ private: isPrivate, ...options }: Omit<ReplyOptions, "deleteAfter">) => {
     const flags = isPrivate ? MessageFlags.Ephemeral : undefined;
-    if (interaction.deferred && !interaction.replied) {
-      return interaction.editReply(options);
-    }
+    if (interaction.deferred && !interaction.replied) return interaction.editReply(options);
     if (interaction.replied) {
       return interaction.followUp({ ...options, ...(flags === undefined ? {} : { flags }) });
     }
@@ -25,8 +22,20 @@ export function slashContext(
       ...(flags === undefined ? {} : { flags }),
       withResponse: true,
     });
-    const message = response.resource?.message;
-    return message ?? interaction.fetchReply();
+    return response.resource?.message ?? interaction.fetchReply();
+  };
+
+  const send = async (reply: Reply): Promise<Message> => {
+    const { deleteAfter, ...options } = toReplyOptions(reply);
+    const message = await post(options);
+    if (deleteAfter !== undefined) {
+      // deleteReply also works for private replies, which message.delete() cannot remove.
+      setTimeout(
+        () => void interaction.deleteReply(message).catch(() => undefined),
+        deleteAfter * 1000,
+      );
+    }
+    return message;
   };
 
   return {
@@ -38,6 +47,7 @@ export function slashContext(
     channel,
     prefix: "/",
     commands,
+    messageId: undefined,
     reply: send,
     defer: async ({ private: isPrivate = false } = {}) => {
       if (interaction.deferred || interaction.replied) return;
