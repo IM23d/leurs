@@ -4,10 +4,28 @@
 import { loadConfig } from "#app/config.ts";
 import { openDb } from "#db/client.ts";
 
+import { birthdaysImporter } from "./birthdays.ts";
+import { economyImporter } from "./economy.ts";
+import { lastfmImporter } from "./lastfm.ts";
+import { levelsImporter } from "./levels.ts";
+import { moderationImporter } from "./moderation.ts";
+import { rolesImporter } from "./roles.ts";
 import { settingsImporter } from "./settings.ts";
 import { legacySource, type Importer } from "./source.ts";
+import { timezonesImporter } from "./timezones.ts";
+import { toolsImporter } from "./tools.ts";
 
-const importers: readonly Importer[] = [settingsImporter];
+const importers: readonly Importer[] = [
+  settingsImporter,
+  levelsImporter,
+  economyImporter,
+  moderationImporter,
+  rolesImporter,
+  toolsImporter,
+  birthdaysImporter,
+  timezonesImporter,
+  lastfmImporter,
+];
 
 const directory = process.argv[2];
 if (!directory) {

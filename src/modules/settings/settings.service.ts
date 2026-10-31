@@ -4,7 +4,7 @@ import { db } from "#db/client.ts";
 
 import { guildSettings, type GuildSettings } from "./settings.schema.ts";
 
-export const DEFAULT_PREFIX = "-";
+const DEFAULT_PREFIX = "-";
 export const MAX_PREFIX_LENGTH = 3;
 
 export type ChannelSetting = keyof Pick<
