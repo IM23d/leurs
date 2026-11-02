@@ -47,7 +47,22 @@ npm run deploy:commands   # registers the slash commands with Discord
 docker compose up -d --build
 ```
 
-The database lives in `./data/leurs.db`.
+The database lives in `./data/leurs.db`. `GET http://localhost:9992/health` returns 200 while the
+bot is connected to Discord.
+
+### On a server
+
+CI publishes the image to `ghcr.io/im23d/leurs` after the checks pass. Every push to `v2` updates
+the `latest` tag. On the server you only need `compose.yml`, `.env` and a `data` folder:
+
+```bash
+docker compose pull
+docker compose run --rm leurs node scripts/deploy-commands.ts   # when commands changed
+docker compose up -d
+```
+
+If the package on GitHub is private, log in first with a token that has `read:packages`:
+`docker login ghcr.io -u <github-user>`.
 
 ### Without Docker
 
@@ -73,6 +88,7 @@ All settings come from `.env`. See [.env.example](.env.example).
 | `LASTFM_API_KEY`                     | Last.fm commands                                                                    |
 | `DEEPSEEK_API_KEY`                   | `/ai` and `/translate`                                                              |
 | `GOOGLE_API_KEY`, `GOOGLE_CSE_ID`    | `/image`                                                                            |
+| `HEALTH_PORT`                        | Optional. Port for `GET /health`, 9992 by default                                   |
 
 Commands whose key is missing reply that the feature is not configured. Server admins set the
 prefix, log channels and jail role with `/prefix` and `/settings`.

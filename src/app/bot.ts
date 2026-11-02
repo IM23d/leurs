@@ -8,6 +8,7 @@ import { getPrefix } from "#modules/settings/api.ts";
 import { logger } from "#shared/lib/logger.ts";
 
 import type { Config } from "./config.ts";
+import { startHealthServer } from "./health.ts";
 import { modules } from "./modules.ts";
 
 const logFailure = (what: string) => (error: unknown) => {
@@ -53,11 +54,13 @@ export async function startBot(config: Config): Promise<() => Promise<void>> {
     logger.info({ user: ready.user.tag, guilds: ready.guilds.cache.size }, "Bot is ready");
   });
 
+  const stopHealthServer = startHealthServer(config.HEALTH_PORT, () => client.isReady());
   await client.login(config.DISCORD_TOKEN);
   // Stop taking new work first, then let modules write what they buffered.
   return async () => {
     await stopScheduler();
     await client.destroy();
+    await stopHealthServer();
     for (const hook of registry.shutdownHooks) {
       await Promise.resolve(hook()).catch(logFailure("Shutdown hook failed"));
     }

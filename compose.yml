@@ -1,10 +1,14 @@
 services:
   leurs:
+    image: ghcr.io/im23d/leurs:latest
     build: .
     container_name: leurs
     env_file: .env
     environment:
       DATABASE_PATH: /app/data/leurs.db
+      HEALTH_PORT: 9992
+    ports:
+      - "9992:9992"
     volumes:
       - ./data:/app/data
     restart: unless-stopped

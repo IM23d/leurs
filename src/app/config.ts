@@ -19,6 +19,7 @@ const schema = z.object({
         .filter(Boolean),
     ),
   DATABASE_PATH: z.string().default("data/leurs.db"),
+  HEALTH_PORT: z.coerce.number().int().min(1).max(65_535).default(9992),
   LASTFM_API_KEY: optional,
   DEEPSEEK_API_KEY: optional,
   GOOGLE_API_KEY: optional,

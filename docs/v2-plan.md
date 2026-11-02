@@ -106,8 +106,8 @@ Copy `.env.example` to `.env`. Two names changed from the Python bot:
    `npm run import:json -- <path to the copy>` against a fresh database. Check the row counts.
 4. Try the commands on the test server. `/rolebackup save` once fills the role backups.
 5. Stop the Python bot, import the real data into the production database, switch `.env` to the
-   production token without `DEV_GUILD_ID`, run `npm run deploy:commands`, and start with
-   `docker compose up -d --build`.
+   production token without `DEV_GUILD_ID`, and start the image on the server as the README's "On
+   a server" section describes.
 6. Update docs.leurs.ch from `docs/commands.md`.
 7. Delete `legacy/` and `scripts/import-json/`, then merge `v2` into `main`.
 
