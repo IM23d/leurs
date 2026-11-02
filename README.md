@@ -104,8 +104,8 @@ npm run check   # typecheck, lint, format check, tests and unused-code check, sa
   enforces, and how to add a command or a module.
 - After changing a `*.schema.ts` file, run `npm run db:generate` and commit the migration.
 - After changing a command, run `npm run docs:commands`.
-- [docs/v2-plan.md](docs/v2-plan.md) lists what changed from the Python bot, which is kept in
-  `legacy/` until v2 replaces it.
+- [docs/v2-plan.md](docs/v2-plan.md) lists what changed from the Python bot. Its code is in
+  `main`'s history before the v2 merge.
 
 ## Contributing
 

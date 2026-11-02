@@ -28,7 +28,6 @@ scripts/              Command-line tools: deploy commands, generate docs, import
 tests/helpers/        Test setup, such as the in-memory database
 drizzle/              Generated SQL migrations. Never edit by hand
 docs/                 Plans and docs
-legacy/               The old Python bot, kept for reference until cutover
 ```
 
 ## Dependency rules

@@ -21,7 +21,7 @@ const MODULE_BOUNDARY = [
 ];
 
 export default config(
-  { ignores: ["legacy/", "drizzle/", "data/", "node_modules/", "coverage/"] },
+  { ignores: ["drizzle/", "data/", "node_modules/", "coverage/"] },
   js.configs.recommended,
   configs.strictTypeChecked,
   configs.stylisticTypeChecked,

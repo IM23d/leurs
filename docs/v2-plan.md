@@ -1,8 +1,8 @@
 # leurs v2
 
 leurs v2 is a rewrite of the bot in TypeScript, with SQLite instead of JSON files. Every feature
-of the Python bot is ported except the ones listed under "Removed". The Python code stays in
-`legacy/` until cutover.
+of the Python bot is ported except the ones listed under "Removed". The Python code is in `main`'s
+history before the v2 merge.
 
 - Commands: [commands.md](commands.md), generated from the code.
 - Code layout and rules: [architecture.md](architecture.md).
@@ -109,7 +109,7 @@ Copy `.env.example` to `.env`. Two names changed from the Python bot:
    production token without `DEV_GUILD_ID`, and start the image on the server as the README's "On
    a server" section describes.
 6. Update docs.leurs.ch from `docs/commands.md`.
-7. Delete `legacy/` and `scripts/import-json/`, then merge `v2` into `main`.
+7. Delete `scripts/import-json/` once the production data is imported.
 
 ## Open points
 
