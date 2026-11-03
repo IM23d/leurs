@@ -1,0 +1,74 @@
+{
+  "name": "leurs",
+  "version": "2.0.0",
+  "private": true,
+  "description": "leurs Discord bot",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "imports": {
+    "#app/*": "./src/app/*",
+    "#core/*": "./src/core/*",
+    "#db/*": "./src/db/*",
+    "#shared/*": "./src/shared/*",
+    "#modules/*": "./src/modules/*",
+    "#test/*": "./tests/*"
+  },
+  "scripts": {
+    "dev": "node --watch-path=src --watch-path=drizzle --env-file=.env src/index.ts",
+    "start": "node --env-file-if-exists=.env src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "knip": "knip",
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run knip",
+    "db:generate": "drizzle-kit generate",
+    "deploy:commands": "node --env-file=.env scripts/deploy-commands.ts",
+    "import:json": "node --env-file=.env scripts/import-json/index.ts",
+    "docs:commands": "node scripts/gen-docs.ts && prettier --write docs/commands.md",
+    "prepare": "lefthook install || true",
+    "db:check": "drizzle-kit check",
+    "scan:levels": "node --env-file-if-exists=.env scripts/scan-levels.ts",
+    "scan:wordle": "node --env-file-if-exists=.env scripts/scan-wordle.ts"
+  },
+  "dependencies": {
+    "@napi-rs/canvas": "^1.1.0",
+    "better-sqlite3": "^13.0.3",
+    "discord.js": "^14.28.0",
+    "drizzle-orm": "^0.45.4",
+    "pino": "^10.4.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
+    "@eslint/js": "^10.0.1",
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^26.6.6",
+    "drizzle-kit": "^0.31.11",
+    "eslint": "^10.14.0",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-import-x": "^4.17.1",
+    "eslint-plugin-unicorn": "^79.0.0",
+    "knip": "^6.44.1",
+    "lefthook": "^2.2.2",
+    "pino-pretty": "^13.2.0",
+    "prettier": "^3.9.10",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.1",
+    "vitest": "^5.0.5"
+  },
+  "allowScripts": {
+    "better-sqlite3@13.0.3": true,
+    "esbuild@0.18.20": true,
+    "esbuild@0.25.12": true,
+    "esbuild@0.28.2": true,
+    "lefthook@2.2.2": true,
+    "unrs-resolver@1.12.2": true
+  }
+}
